@@ -1,0 +1,164 @@
+/* Limpieza de estilos por defecto del navegador */
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Estilos del Contenedor Principal (con el fondo degradado) */
+.container {
+  background: linear-gradient(135deg, #1e1e1e 0%, #000000 100%);
+  color: white;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centra el contenido horizontalmente */
+}
+
+/* Estilos de la Barra de Navegación */
+.navbar {
+  width: 100%;
+  background: linear-gradient(90deg, #1a0033 0%, #000000 100%);
+  padding: 1rem 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+.navbar-brand h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.navbar-menu {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.navbar-menu a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.navbar-menu a:hover {
+  color: #ffcc00;
+}
+
+/* Contenedor principal de las cajas de contenido */
+.main-content {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 2rem;
+  padding: 3rem 0; /* Padding vertical, padding horizontal en el contenedor principal */
+  width: 900px; /* Ancho fijo para el contenido */
+  max-width: 12000px;
+  box-sizing: border-box;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Para centrar el contenido en pantallas muy grandes */
+@media (min-width: 1200px) {
+  .main-content {
+    width: 1200px;
+    padding: 3rem;
+  }
+}
+
+/* Para manejar el espaciado en pantallas más pequeñas */
+@media (max-width: 9px) {
+  .main-content {
+    width: 9%;
+    padding: 3rem 1rem;
+    gap: 1rem;
+  }
+}
+
+/* Estilos de las Secciones de Contenido (Izquierda y Derecha) */
+.input-section,
+.response-section {
+  background: #1a0033;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.input-section {
+  border: 2px solid #663399;
+}
+
+.response-section {
+  background: linear-gradient(135deg, #ffcc00, #993399);
+  color: #1e1e1e;
+  border: 2px solid #ffd700;
+}
+
+.response-section h2 {
+  color: #1e1e1e;
+  text-align: center;
+}
+
+.input-section h2 {
+  text-align: center;
+}
+
+/* Contenedor del Historial de Mensajes */
+.history-container {
+  flex-grow: 1;
+  background-color: #1a0033;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+.message-placeholder {
+  background-color: #663399;
+  height: 50px;
+  border-radius: 10px;
+  opacity: 0.7;
+}
+
+/* Campo de Texto */
+.input-box {
+  width: 100%;
+  min-height: 100px;
+  padding: 1rem;
+  background-color: #1a0033;
+  color: white;
+  border: 1px solid #663399;
+  border-radius: 8px;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.generate-button {
+  background-color: #663399;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  align-self: flex-end;
+  margin-top: 1rem;
+}
+
+.generate-button:hover {
+  background-color: #8040b3;
+}
