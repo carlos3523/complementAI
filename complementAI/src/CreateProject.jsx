@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './CreateProject.css'; // Opcional, si quieres estilos únicos
+import './ChatUI.css';
 
 const CreateProject = () => {
   const [projectTitle, setProjectTitle] = useState('');
