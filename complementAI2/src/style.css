@@ -296,3 +296,161 @@
   color: #fff;
   text-decoration: underline;
 }
+
+.assistant {
+  min-height: 100vh;
+  background: #0b0b0b;
+  color: var(--text, #fff);
+  padding: 96px 16px 24px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.assistant-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+.assistant-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+}
+@media (max-width: 1024px) {
+  .assistant-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.assistant-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assistant-card {
+  background: var(--card, rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  padding: 16px;
+}
+.assistant-subtitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.assistant-label {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 8px;
+}
+
+.assistant-input,
+.assistant-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #111;
+  color: #fff;
+  outline: none;
+}
+.assistant-input:focus,
+.assistant-select:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+}
+
+.assistant-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 12px 0;
+}
+
+.assistant-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.assistant-chip {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.assistant-chip:hover {
+  background: #222;
+}
+
+.assistant-chat {
+  height: 360px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+  background: #0e0e0e;
+}
+.assistant-msg {
+  margin: 6px 0;
+}
+.assistant-msg .who {
+  font-weight: 700;
+}
+.assistant-msg.right {
+  text-align: right;
+}
+.assistant-msg.left {
+  text-align: left;
+}
+
+.assistant-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.flex1 {
+  flex: 1;
+}
+
+.assistant-btn {
+  padding: 10px 14px;
+  border: 1px solid #333;
+  border-radius: 999px;
+  cursor: pointer;
+  background: #fff;
+  color: #111;
+  font-weight: 700;
+}
+.assistant-btn:hover {
+  filter: brightness(0.95);
+}
+
+.assistant-btn.success {
+  margin-top: 10px;
+  background: #facc15; /* tu amarillo del CTA */
+  border-color: #facc15;
+  color: #111;
+}
+
+.assistant-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 4px 0;
+}
+.assistant-meta-strong {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+.assistant-list {
+  margin: 0;
+  padding-left: 18px;
+}
+.assistant-list li {
+  font-size: 14px;
+}

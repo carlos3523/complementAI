@@ -31,6 +31,7 @@ export default function Home({ isAuthed = false }) {
           <nav className="nav">
             <Link to="/about">Nosotros</Link>
             <Link to="/login">Ingresar</Link>
+            <Link to="/Assistant">Asistente</Link>
             <Link to="/register" className="btn-pill">
               Inscribirse
             </Link>
