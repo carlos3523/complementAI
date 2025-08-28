@@ -189,7 +189,14 @@ export default function AssistantPage() {
 
   return (
     <main className="assistant">
-      <h1 className="assistant-title">Asistente de Proyectos</h1>
+      <header className="assistant-navbar">
+        <div className="assistant-navbar-inner">
+          <div className="assistant-navbar-left">
+            <span className="assistant-navbar-logo">📁</span>
+            <h1 className="assistant-navbar-title">Asistente de Proyectos</h1>
+          </div>
+        </div>
+      </header>
 
       <div className="assistant-wrap">
         {/* Sidebar */}
