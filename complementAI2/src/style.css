@@ -454,3 +454,415 @@
 .assistant-list li {
   font-size: 14px;
 }
+
+/* ===== AppBar (igual look que Home) ===== */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: -64px 0 16px; /* solapa el padding superior de .assistant */
+  background: linear-gradient(90deg, #6d28d9, #a21caf, #db2777);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.appbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.assistant .appbar {
+  grid-column: 1 / -1;
+}
+
+.appbar-title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appbar-btn {
+  background: #facc15;
+  color: #111;
+  font-weight: 800;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+.appbar-btn.ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* =========================
+   THEME TOKENS
+   ========================= */
+:root {
+  --bg: #0b0b0f;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+
+  --surface: #15151a;
+  --surface-2: #1b1b22;
+  --border: #26262e;
+
+  --brand-a: #6d28d9; /* purple */
+  --brand-b: #a21caf; /* fuchsia */
+  --brand-c: #db2777; /* pink */
+
+  --primary: #facc15; /* yellow */
+  --primary-700: #eab308;
+
+  --radius: 16px;
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Container estándar (se usa en dashboard y wizard) */
+.assistant-wrap,
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 18px 64px;
+}
+
+/* =========================
+   APP BAR
+   ========================= */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: -54px 0 18px; /* se “superpone” al padding del wrap */
+  background: linear-gradient(
+    90deg,
+    var(--brand-a),
+    var(--brand-b),
+    var(--brand-c)
+  );
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.appbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.appbar-title {
+  font-weight: 800;
+  font-size: 18px;
+  color: #fff;
+  display: flex;
+  gap: 8px;
+}
+
+/* Si el padre es grid, el header debe ocupar todo el ancho */
+.wizard .appbar,
+.dashboard .appbar {
+  grid-column: 1 / -1;
+}
+
+/* Botones de AppBar y botones generales */
+.appbar-btn,
+.btn-primary {
+  background: var(--primary);
+  color: #111;
+  font-weight: 800;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.appbar-btn:hover,
+.btn-primary:hover {
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+}
+.appbar-btn:active,
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.btn-danger:hover {
+  filter: brightness(1.05);
+}
+
+/* =========================
+   TARJETAS / PANELES
+   ========================= */
+.panel {
+  background: linear-gradient(0deg, var(--surface), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+.side-title {
+  font-weight: 800;
+  font-size: 18px;
+}
+.side-help,
+.muted {
+  color: var(--muted);
+}
+
+/* Listados con bullets bonitos */
+.list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.list li {
+  margin: 6px 0;
+}
+
+/* Badges (chips) */
+.badge {
+  background: #23232b;
+  color: #fff;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.badge.subtle {
+  background: #30303a;
+}
+
+/* =========================
+   FORM CONTROLS
+   ========================= */
+.label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+.input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input::placeholder {
+  color: #8b8b95;
+}
+.input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand-b);
+  box-shadow: 0 0 0 3px rgba(162, 28, 175, 0.25);
+}
+
+/* =========================
+   WIZARD LAYOUT (izq form + der sugerencias)
+   ========================= */
+.wizard .wrap {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* =========================
+   DASHBOARD GRID
+   ========================= */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+.cards .panel {
+  display: block;
+}
+
+/* =========================
+   SCROLLBAR (bonito y discreto)
+   ========================= */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3b3b44 transparent;
+}
+*::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2f2f37;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3b3b44;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 1024px) {
+  .wizard .wrap {
+    grid-template-columns: 1fr;
+  }
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .appbar {
+    margin: -38px 0 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* ===== Dashboard: grid de tarjetas y paneles ===== */
+.dashboard .cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 18px;
+}
+
+/* Panel más respirado */
+.panel {
+  padding: 20px;
+  border-radius: 16px;
+}
+
+/* Cabecera de tarjeta (título a la izq, acciones a la der) */
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-title {
+  font-weight: 800;
+  font-size: 18px;
+}
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* Acciones compactas y alineadas dentro del panel */
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.card-actions .btn-ghost,
+.card-actions .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+}
+
+/* Lista de plantillas con más aire */
+.panel .list {
+  margin-top: 10px;
+}
+.panel .list li {
+  margin: 8px 0;
+}
+
+/* ===== Wizard: dos columnas más cómodas ===== */
+.wizard .panel {
+  padding: 24px;
+}
+.wizard .side-title {
+  font-size: 22px;
+}
+.wizard .list li {
+  margin: 10px 0;
+}
+
+/* Input/Select ligeramente más claros para accesibilidad */
+.input,
+select,
+textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.input:focus,
+select:focus {
+  border-color: var(--brand-b);
+  box-shadow: 0 0 0 3px rgba(162, 28, 175, 0.25);
+}
+
+/* Botón eliminar dentro del panel (sin desplazamientos raros) */
+.btn-danger {
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dashboard .cards {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}

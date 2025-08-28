@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "../style.css"; // <-- estilos separados con tu tema oscuro
 
 // --- KB mínimo de metodologías ---
@@ -113,6 +115,17 @@ export default function AssistantPage() {
   const artifacts = kb.artifacts[phase] || [];
   const checks = (kb.checks && kb.checks[phase]) || [];
 
+  const navigate = useNavigate();
+
+  function openWizard() {
+    const qs = new URLSearchParams({
+      standard,
+      phase,
+      domain: industry || "",
+    }).toString();
+    navigate(`/wizard?${qs}`);
+  }
+
   // autoscroll
   const boxRef = useRef(null);
   useEffect(() => {
@@ -189,9 +202,22 @@ export default function AssistantPage() {
 
   return (
     <main className="assistant">
-      <h1 className="assistant-title">Asistente de Proyectos</h1>
-
       <div className="assistant-wrap">
+        <div className="appbar">
+          <div className="appbar-left">
+            <button className="appbar-btn" onClick={openWizard}>
+              Abrir Wizard
+            </button>
+            <div className="appbar-title">📁 Asistente de Proyectos</div>
+          </div>
+          <button
+            className="appbar-btn ghost"
+            onClick={() => navigate("/dashboard")}
+          >
+            Volver al Dashboard
+          </button>
+        </div>
+
         {/* Sidebar */}
         <aside className="assistant-column">
           <div className="assistant-card">
