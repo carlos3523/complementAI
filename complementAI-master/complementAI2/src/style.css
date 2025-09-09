@@ -1017,3 +1017,57 @@ select:focus {
 }
 
 
+/* Chat más compacto */
+.assistant-chat { padding: 10px; }
+.msg-row { margin: 8px 0; gap: 8px; }
+.bubble { padding: 8px 10px; }
+.bubble-meta { margin-bottom: 4px; }
+.bubble-text p { margin: 6px 0; }
+
+/* Markdown dentro del chat */
+.md-code {
+  background: #0f0f12;
+  border: 1px solid #262626;
+  border-radius: 10px;
+  padding: 10px;
+  overflow: auto;
+}
+.bubble ol, .bubble ul { margin: 6px 0 6px 18px; }
+.bubble li { margin: 2px 0; }
+.bubble code { background:#1b1b1e; padding: 1px 4px; border-radius: 4px; }
+/* Compactar separación entre burbujas */
+.msg-row { margin: 8px 0; }
+.bubble { padding: 10px 12px; }
+
+/* Meta más limpio: "Tú • 09:51" */
+.bubble-meta { margin-bottom: 6px; opacity: .85; font-size: 12px; }
+.bubble-meta .who { font-weight: 600; color: #e5e7eb; }
+
+/* Avatar sin letras visibles (solo círculo) */
+.avatar { color: transparent; text-indent: -9999px; overflow: hidden; }
+
+/* Markdown dentro de la burbuja */
+.bubble-text.markdown { 
+  white-space: normal;            /* no uses pre-wrap aquí, markdown ya añade <p>/<li> */
+  line-height: 1.5;
+}
+
+.bubble-text.markdown h1,
+.bubble-text.markdown h2,
+.bubble-text.markdown h3 {
+  margin: 8px 0 6px;
+  line-height: 1.25;
+}
+
+.bubble-text.markdown p { margin: 6px 0; }
+
+.bubble-text.markdown ul,
+.bubble-text.markdown ol {
+  padding-left: 1.25rem;
+  margin: 6px 0;
+}
+
+.bubble-text.markdown li { margin: 2px 0; }
+
+/* Que los números no "se peguen" al texto */
+.bubble-text.markdown ol { list-style-position: outside; }
