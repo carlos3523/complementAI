@@ -1020,7 +1020,10 @@ select:focus {
 /* Chat más compacto */
 .assistant-chat { padding: 10px; }
 .msg-row { margin: 8px 0; gap: 8px; }
-.bubble { padding: 8px 10px; }
+.bubble { 
+  padding: 10px 12px; 
+  border-radius: 16px; /* suaviza las esquinas */
+}
 .bubble-meta { margin-bottom: 4px; }
 .bubble-text p { margin: 6px 0; }
 

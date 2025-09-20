@@ -4,15 +4,17 @@
 .light {
   --bg: #ffffff;
   --text: #111827;
-  --muted: #6b7280;
+  --muted: #202020;
 
-  --surface: #ffffff;
-  --surface-2: #ffffff;
+  --surface: #c081ff;
+  --surface-2: #dcdcdc;
   --border: #383838;
+  
+  --surface-3: #f6f6f6;
 
   --brand-a: #7c3aed; /* purple */
   --brand-b: #dd9fe2; /* pink */
-  --brand-c: #ed82f1; /* amber/orange */
+  --brand-c: #ed82f1; 
 
   --primary: #c081ff; 
   --primary-700: #bd83ff;
@@ -21,7 +23,7 @@
   --shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
   --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.05);
 
-  --black-20: rgba(0,0,0,0.08);
+  --black-20: rgba(27, 27, 27, 0);
 }
 
 .light html,
@@ -165,6 +167,7 @@
   padding: 20px;
 }
 
+
 /* =========================
    AUTH
    ========================= */
@@ -225,7 +228,7 @@
   padding: 12px 16px;
   margin: -54px 0 18px;
 }
-.light .appbar-title { color: #fff; font-weight: 800; }
+.light .appbar-title { color: #000000; font-weight: 800; }
 
 /* =========================
    BUTTONS
@@ -397,7 +400,7 @@
 /* =========================
    CHAT
    ========================= */
-.light .assistant-chat { padding: 10px; background: var(--surface); }
+.light .assistant-chat { padding: 10px; background: var(--surface-3); }
 .light .msg-row { margin: 8px 0; gap: 8px; }
 .light .bubble { padding: 10px 12px; }
 .light .bubble-meta {
@@ -428,4 +431,9 @@
 .light .bubble-text.markdown h3 {
   margin: 8px 0 6px;
   line-height: 1.25;
+}
+
+.light .bubble { 
+  padding: 10px 12px; 
+  border-radius: 16px; /* suaviza las esquinas */
 }
