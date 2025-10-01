@@ -7,6 +7,7 @@ import Register from "./pages/Register.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
+import CustomForm from "./components/CustomForm";
 
 export default function App() {
   return (
@@ -21,5 +22,6 @@ export default function App() {
         <Route path="/DashBoard" element={<DashBoard />}></Route>
       </Routes>
     </BrowserRouter>
+    
   );
 }
