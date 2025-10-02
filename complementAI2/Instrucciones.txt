@@ -1,0 +1,38 @@
+--Abrir terminal
+
+
+npm install
+
+npm install pg
+
+
+--abrir otro terminal
+
+cd server
+node index.js
+
+
+--abrir un tercer terminal
+
+psql -U postgres -p 5433
+
+contraseña: Pctron999
+
+CREATE DATABASE complementai;
+
+# Conectarte a la base recién creada
+\c complementai
+
+# Crear la tabla de usuarios con sus campos básicos
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(50) NOT NULL,
+  apellido VARCHAR(50) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- en el primer terminal
+
+npm run dev
