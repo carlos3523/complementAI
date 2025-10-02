@@ -600,19 +600,57 @@ const ChatMessage = ({ m }) => {
             {errMsg && <div className="assistant-error">{errMsg}</div>}
 
             <div className="assistant-row">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
+              <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Tab") {
+                  e.preventDefault();
+                  const { selectionStart, selectionEnd } = e.target;
+                  const before = input.substring(0, selectionStart);
+                  const selected = input.substring(selectionStart, selectionEnd);
+                  const after = input.substring(selectionEnd);
+
+                  const lines = selected.split("\n");
+
+                  if (e.shiftKey) {
+                    // Shift+Tab: quitar tab al inicio de cada línea
+                    const unindented = lines.map(line => line.startsWith("\t") ? line.slice(1) : line);
+                    const newValue = before + unindented.join("\n") + after;
+                    setInput(newValue);
+
+                    // recalcular cursor: mantenerlo relativo al final de la selección
+                    const removedTabs = lines.reduce((acc, line) => acc + (line.startsWith("\t") ? 1 : 0) + line.length, 0) - lines.join("\n").length;
+                    setTimeout(() => {
+                      e.target.selectionStart = selectionStart;
+                      e.target.selectionEnd = selectionEnd - removedTabs;
+                    }, 0);
+                  } else {
+                    // Tab normal: agregar tab al inicio de cada línea
+                    const indented = lines.map(line => "\t" + line);
+                    const newValue = before + indented.join("\n") + after;
+                    setInput(newValue);
+
+                    // cursor al final de la última línea insertada
+                    const addedTabs = lines.length;
+                    setTimeout(() => {
+                      e.target.selectionStart = selectionStart + 1;
+                      e.target.selectionEnd = selectionEnd + addedTabs;
+                    }, 0);
                   }
-                }}
-                placeholder="Escribe y presiona Enter…"
-                className="assistant-input flex1"
-                disabled={loading}
-              />
+                }
+
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Escribe tu mensaje..."
+              className="assistant-input flex1"
+              rows={3}
+            />
+
+
               <button onClick={handleSend} className="assistant-btn" disabled={loading}>
                 {loading ? "Enviando…" : "Enviar"}
               </button>
