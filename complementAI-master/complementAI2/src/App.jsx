@@ -7,6 +7,7 @@ import Register from "./pages/Register.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
+import Progreso from "./pages/Progreso";
 import CustomForm from "./components/CustomForm";
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/Assistant" element={<Assistant />}></Route>
         <Route path="/Wizard" element={<Wizard />}></Route>
         <Route path="/DashBoard" element={<DashBoard />}></Route>
+        <Route path="/Progreso" element={<Progreso />}></Route>
       </Routes>
     </BrowserRouter>
     
