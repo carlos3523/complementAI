@@ -31,7 +31,7 @@ export default function Login() {
         if (!email.includes("@") || password.length < 4)
           throw new Error("Credenciales inválidas");
         localStorage.setItem(
-          "auth_demo_user",
+          "auth_user",
           JSON.stringify({ email, name: email.split("@")[0] })
         );
       }

@@ -10,16 +10,18 @@ import DashBoard from "./pages/DashBoard.jsx";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />}></Route>
-        <Route path="/login" element={<Login />}></Route>
-        <Route path="/register" element={<Register />}></Route>
-        <Route path="*" element={<Home />} />
-        <Route path="/Assistant" element={<Assistant />}></Route>
-        <Route path="/Wizard" element={<Wizard />}></Route>
-        <Route path="/DashBoard" element={<DashBoard />}></Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />}></Route>
+          <Route path="/login" element={<Login />}></Route>
+          <Route path="/register" element={<Register />}></Route>
+          <Route path="*" element={<Home />} />
+          <Route path="/Assistant" element={<Assistant />}></Route>
+          <Route path="/Wizard" element={<Wizard />}></Route>
+          <Route path="/DashBoard" element={<DashBoard />}></Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

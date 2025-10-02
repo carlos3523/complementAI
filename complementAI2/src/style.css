@@ -14,6 +14,7 @@
   min-height: 100vh;
   color: var(--text);
   background: #0b0b0b;
+  
 }
 .container {
   max-width: 1200px;
@@ -76,10 +77,12 @@
 }
 
 /* Split hero */
+
+
 .split {
   display: grid;
   grid-template-columns: 1fr;
-  min-height: 100vh;
+  min-height: 1vh;
 }
 @media (min-width: 1024px) {
   .split {
@@ -87,11 +90,7 @@
   }
 }
 
-.hero-left {
-  position: relative;
-  background: linear-gradient(180deg, var(--bg1), var(--bg2), var(--bg3));
-  padding-top: 96px;
-}
+
 .side-rail {
   position: absolute;
   left: 0;
@@ -198,29 +197,14 @@
   background: #0b0b0b;
   padding: 64px 0;
 }
-.cards {
-  display: grid;
-  gap: 16px;
+.features .cards{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(220px, 30vw, 260px), 1fr));
+  gap: clamp(12px, 2vw, 20px);
+  padding: clamp(24px, 4vw, 40px);
 }
-@media (min-width: 768px) {
-  .cards {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-.card {
-  background: var(--card);
-  padding: 20px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-.card h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-}
-.card p {
-  margin: 0;
-  color: var(--text-dim);
-  font-size: 14px;
+.features .card{
+  background:#111; border:1px solid #222; border-radius:16px; padding:16px;
 }
 
 /* ===== auth (login/registro) ===== */
@@ -455,7 +439,6 @@
   font-size: 14px;
 }
 
-<<<<<<< HEAD
 /* ===== AppBar (igual look que Home) ===== */
 .appbar {
   position: sticky;
@@ -867,154 +850,227 @@ select:focus {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
 }
-=======
-.assistant-msg {
-  display: inline-block;
-  max-width: 75%;
-  padding: 8px 12px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.4;
-  box-shadow: 0 2px 6px rgb(0, 0, 0);
-}
-.assistant-msg.left {
-  background: #d4ab09;
-  color: #000000;
-  border-bottom-left-radius: 4px;
-}
-.assistant-msg.right {
-  background: var(--bg1);
-  color: #fff;
-  border-bottom-right-radius: 4px;
-  margin-left: auto;
+
+
+
+
+
+
+
+
+
+
+
+/* anula la grilla y cualquier separación */
+.split{
+  display: block !important;          /* o 'contents' si prefieres */
+  grid-template-columns: none !important;
+  gap: 0 !important;
 }
 
-.assistant-msg .who {
-  display: block;
-  font-size: 11px;
-  opacity: 0.6;
-  margin-bottom: 2px;
+/* haz que el hero ocupe todo el ancho con su gradiente */
+.hero{
+  background: linear-gradient(180deg,#6a11cb 0%, #9c27b0 50%, #7b1fa2 100%);
+  padding: clamp(32px, 7vw, 96px) clamp(20px, 4vw, 60px);
+  min-height: calc(100dvh - 64px);    /* opcional si quieres que llene la pantalla */
 }
 
-.assistant-chat {
-  height: 420px;
-  padding: 14px;
-  background: #101010;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #555 transparent;
+
+
+/* --- Toggle hamburguesa --- */
+.nav-toggle{
+  display: none;               /* visible solo en mobile */
+  width: 40px; height: 40px;
+  border: 0; background: transparent; cursor: pointer;
+  align-items: center; justify-content: center; gap: 4px;
 }
-.assistant-chat::-webkit-scrollbar {
-  width: 6px;
+.nav-toggle .bar{
+  display: block; width: 22px; height: 2px; background: #fff;
+  border-radius: 2px;
 }
-.assistant-chat::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 4px;
-}
-.assistant-chat::-webkit-scrollbar-thumb:hover {
-  background: #777;
+.nav-toggle:focus{ outline: 2px solid #7b1fa2; outline-offset: 2px; }
+
+/* --- Nav horizontal por defecto (desktop) --- */
+.nav{
+  display: flex; align-items: center;
 }
 
-/* Sidebar */
-.assistant-subtitle {
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-dim);
-  margin-bottom: 10px;
-}
-.assistant-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-top: 12px;
-}
+/* --- Mobile: nav oculto y botón visible --- */
+@media (max-width: 900px){
+  .nav{ 
+    position: fixed; 
+    top: 64px; right: 0; left: 0;
+    display: none;                      /* oculto por defecto */
+    flex-direction: column; 
+    gap: 12px;
+    padding: 16px;
+    background: rgba(11,11,11,0.95);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    z-index: 999;
+  }
+  .nav.is-open{ display: flex; }        /* mostrar al abrir */
 
-.assistant-chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #1f1f1f;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-.assistant-chip:hover {
-  background: var(--bg2);
-  border-color: var(--bg2);
-}
+  .nav a{ margin-left: 0; font-size: 16px; } /* anula margen desktop */
 
-.assistant-input,
-.assistant-select {
-  background: #141414;
-  border-radius: 12px;
-  font-size: 14px;
+  .nav-toggle{ display: inline-flex; }  /* muestra el botón */
 }
-
-.assistant-btn {
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-.assistant-btn:hover {
-  transform: translateY(-1px);
-}
-.assistant-btn.success {
-  background: var(--bg3);
-  border-color: var(--bg3);
-  color: #fff;
-}
-
-.assistant-navbar {
-  background: linear-gradient(90deg, var(--bg1), var(--bg2), var(--bg3));
-  padding: 14px 24px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  margin-bottom: 20px;
-  position: sticky;
-  top: 64px;
-  z-index: 900;
-}
-
-.assistant-navbar-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.assistant-navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.assistant-navbar-logo {
-  font-size: 20px;
-}
-
-.assistant-navbar-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.assistant-navbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.assistant-navbar-btn {
-  background: #fff;
-  color: #111;
-  font-weight: 600;
-  border: none;
-  border-radius: 999px;
-  padding: 8px 16px;
+/* Botón hamburguesa: visible en mobile */
+.nav-toggle{
+  display: none;
+  width: 40px; height: 40px;
+  border: 0;
+  color: #fff;                 /* color de las rayitas */
+  background: rgba(255,255,255,0.12);
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-.assistant-navbar-btn:hover {
-  background: #facc15;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
 }
 
->>>>>>> b6378cc5495a39b78ed55829d7ea58269f1b13c5
+/* Nav de escritorio (igual que ya tenías) */
+.nav-desktop{ display:flex; align-items:center; gap: 0; }
+
+/* ---------- Drawer móvil (derecha) ---------- */
+.backdrop{
+  position: fixed; inset: 64px 0 0 0;   /* debajo de la topbar */
+  background: rgba(0,0,0,0.35);
+  z-index: 1100;
+}
+
+.drawer{
+  position: fixed; top: 64px; right: 0;
+  height: calc(100dvh - 64px);
+  width: min(320px, 85vw);
+  background: rgba(17,17,17,0.98);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.4);
+  transform: translateX(100%);
+  transition: transform .25s ease;
+  z-index: 1110;
+  display: flex; flex-direction: column;
+}
+.drawer.is-open{ transform: translateX(0); }
+
+.drawer-menu{
+  display: flex; flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+}
+.drawer-menu a{
+  color: #eaecef; text-decoration: none;
+  padding: 12px 10px; border-radius: 10px;
+  font-size: 16px; line-height: 1.2;
+}
+.drawer-menu a:hover{ background: rgba(255,255,255,0.06); }
+.drawer-menu .btn-pill{
+  background:#fff; color:#111; text-align: center;
+}
+
+
+/*PIE DE PAGINA*/
+/* Fondo continuo con transición natural */
+.features{
+  position: relative;
+  padding: clamp(48px, 7vw, 96px) 0;
+  background: linear-gradient(
+    180deg,
+    rgba(123,31,162,1) 0%,     /* mismo morado del hero */
+    rgba(42,25,58,1) 40%,      /* tono intermedio profundo */
+    rgba(12,12,16,1) 100%      /* fondo base */
+  );
+}
+
+/* Elimina el fade con relieves anteriores */
+.features::before,
+.features::after{
+  content: none !important;
+}
+
+.features .cards{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: clamp(20px, 3vw, 32px);
+  padding-inline: clamp(16px, 5vw, 64px);
+}
+
+.card{
+  border-radius: 20px;
+  padding: 24px;
+  background: rgba(0,0,0,0.55);  /* un toque translúcido */
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform .2s ease, background .2s ease;
+}
+.card:hover{
+  transform: translateY(-6px);
+  background: rgba(0,0,0,0.7);
+}
+
+/* ---------- Breakpoints ---------- */
+@media (max-width: 900px){
+  .nav-desktop{ display: none; }     /* ocultar menú horizontal */
+  .nav-toggle{ display: inline-flex; }  /* mostrar botón hamburguesa */
+}
+
+@media (min-width: 901px){
+  .drawer, .backdrop{ display: none !important; }
+  .nav-toggle{ display: none !important; }
+}
+
+
+/* Chat más compacto */
+.assistant-chat { padding: 10px; }
+.msg-row { margin: 8px 0; gap: 8px; }
+.bubble { 
+  padding: 10px 12px; 
+  border-radius: 16px; /* suaviza las esquinas */
+}
+.bubble-meta { margin-bottom: 4px; }
+.bubble-text p { margin: 6px 0; }
+
+/* Markdown dentro del chat */
+.md-code {
+  background: #0f0f12;
+  border: 1px solid #262626;
+  border-radius: 10px;
+  padding: 10px;
+  overflow: auto;
+}
+.bubble ol, .bubble ul { margin: 6px 0 6px 18px; }
+.bubble li { margin: 2px 0; }
+.bubble code { background:#1b1b1e; padding: 1px 4px; border-radius: 4px; }
+/* Compactar separación entre burbujas */
+.msg-row { margin: 8px 0; }
+.bubble { padding: 10px 12px; }
+
+/* Meta más limpio: "Tú • 09:51" */
+.bubble-meta { margin-bottom: 6px; opacity: .85; font-size: 12px; }
+.bubble-meta .who { font-weight: 600; color: #e5e7eb; }
+
+/* Avatar sin letras visibles (solo círculo) */
+.avatar { color: transparent; text-indent: -9999px; overflow: hidden; }
+
+/* Markdown dentro de la burbuja */
+.bubble-text.markdown { 
+  white-space: normal;            /* no uses pre-wrap aquí, markdown ya añade <p>/<li> */
+  line-height: 1.5;
+}
+
+.bubble-text.markdown h1,
+.bubble-text.markdown h2,
+.bubble-text.markdown h3 {
+  margin: 8px 0 6px;
+  line-height: 1.25;
+}
+
+.bubble-text.markdown p { margin: 6px 0; }
+
+.bubble-text.markdown ul,
+.bubble-text.markdown ol {
+  padding-left: 1.25rem;
+  margin: 6px 0;
+}
+
+.bubble-text.markdown li { margin: 2px 0; }
+
+/* Que los números no "se peguen" al texto */
+.bubble-text.markdown ol { list-style-position: outside; }
