@@ -421,6 +421,21 @@ useEffect(() => {
 const ChatMessage = ({ m }) => {
   const isUser = m.role === "user";
   const meta = `${isUser ? "Tú" : "Asistente"} • ${formatTime(m.ts || Date.now())}`;
+    // --- Lectura por voz (Text-to-Speech)
+  const speak = () => {
+    if (!window.speechSynthesis) {
+      alert("Tu navegador no soporta lectura de voz.");
+      return;
+    }
+
+    const utter = new SpeechSynthesisUtterance(m.text);
+    utter.lang = "es-ES"; // idioma español
+    utter.rate = 1; // velocidad (0.5 más lenta, 2 más rápida)
+    utter.pitch = 1; // tono normal
+    window.speechSynthesis.cancel(); // detener lectura previa
+    window.speechSynthesis.speak(utter);
+  };
+
 
   // Markdown seguro y compacto
   const toHTML = (() => {
@@ -448,6 +463,19 @@ const ChatMessage = ({ m }) => {
           className={`bubble-text ${m.thinking ? "muted" : ""} markdown`}
           dangerouslySetInnerHTML={toHTML}
         />
+                <div
+          className={`bubble-text ${m.thinking ? "muted" : ""} markdown`}
+          dangerouslySetInnerHTML={toHTML}
+        />
+
+        {/* Botón de voz solo para mensajes del asistente */}
+      {!isUser && !m.thinking && (
+        <div className="voice-controls">
+          <button className="speak-btn" onClick={speak} title="Leer en voz alta">🔊</button>
+          <button className="speak-btn stop" onClick={() => window.speechSynthesis.cancel()} title="Detener lectura">⏹️</button>
+        </div>
+      )}
+
       </div>
       {isUser && <div className="avatar user" aria-hidden />}
     </div>
