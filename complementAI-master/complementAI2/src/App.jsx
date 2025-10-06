@@ -8,7 +8,7 @@ import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
 import Progreso from "./pages/Progreso";
-import CustomForm from "./components/CustomForm";
+
 
 export default function App() {
   return (
