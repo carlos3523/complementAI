@@ -1074,3 +1074,15 @@ select:focus {
 
 /* Que los números no "se peguen" al texto */
 .bubble-text.markdown ol { list-style-position: outside; }
+
+.assistant-btn.recording {
+  background-color: #e53935;
+  color: white;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); }
+}

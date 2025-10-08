@@ -370,6 +370,51 @@ function renderMarkdown(md = "") {
     alert("Proyecto guardado. Revísalo en el Dashboard.");
   }
 
+  // --- Grabación de voz ---
+  const [recording, setRecording] = useState(false);
+  const recognitionRef = useRef(null);
+
+  function startRecording() {
+    if (!("webkitSpeechRecognition" in window)) {
+      alert("Tu navegador no soporta reconocimiento de voz 😢");
+      return;
+    }
+
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setRecording(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Error de voz:", event.error);
+      alert("Ocurrió un error al grabar: " + event.error);
+    };
+
+    recognition.onend = () => {
+      setRecording(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }
+
+  function stopRecording() {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setRecording(false);
+    }
+  }
+
+  
   // UI helpers
   const formatTime = (ts) =>
     new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -677,7 +722,14 @@ const ChatMessage = ({ m }) => {
               className="assistant-input flex1"
               rows={3}
             />
-
+             {/* 🎙️ Botón de grabación */}
+              <button
+                onClick={recording ? stopRecording : startRecording}
+                className={`assistant-btn ${recording ? "recording" : ""}`}
+                title={recording ? "Detener grabación" : "Grabar mensaje de voz"}
+              >
+                {recording ? "⏹️" : "🎙️"}
+              </button>
 
               <button onClick={handleSend} className="assistant-btn" disabled={loading}>
                 {loading ? "Enviando…" : "Enviar"}
