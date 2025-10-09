@@ -1,11 +1,23 @@
 import { Link, useNavigate } from "react-router-dom";
+import { register as registerUser } from "../services/auth";
 import "../style.css";
 
 export default function Register() {
   const navigate = useNavigate();
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    navigate("/login");
+    const data = new FormData(e.currentTarget);
+    const nombre = (data.get("nombre") || "").toString().trim();
+    const apellido = (data.get("apellido") || "").toString().trim();
+    const email = (data.get("email") || "").toString().trim();
+    const password = (data.get("password") || "").toString();
+    try {
+      // llama al backend para crear el usuario
+      await registerUser(nombre, apellido, email, password);
+      navigate("/login");
+    } catch (err) {
+      alert(err.message || "No se pudo crear la cuenta");
+    }
   }
 
   return (
@@ -15,19 +27,19 @@ export default function Register() {
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label className="label">Nombre</label>
-            <input className="input" required />
+            <input className="input" name="nombre" required />
           </div>
           <div className="fiel">
             <label className="label">Apellido</label>
-            <input className="input" required />
+            <input className="input" name="apellido" required />
           </div>
           <div className="fiel">
             <label className="label">Email</label>
-            <input className="input" required />
+            <input className="input" name="email" type="email" required />
           </div>
           <div className="fiel">
             <label className="label">Contraseña</label>
-            <input className="input" type="password" required />
+            <input className="input" name="password" type="password" required />
           </div>
           <div className="auth-actions">
             <button className="btn-primary btn wide" type="submit">

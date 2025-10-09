@@ -1,10 +1,10 @@
-import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Layout from "../components/Layout"; 
 import "../style.css";
 
 export default function Home({ isAuthed = false }) {
   const navigate = useNavigate();
-
   const images = useMemo(
     () => [
       "https://images.unsplash.com/photo-1529336953121-a0ce23b1fd1e?auto=format&fit=crop&w=1600&q=80",
@@ -13,6 +13,7 @@ export default function Home({ isAuthed = false }) {
     ],
     []
   );
+
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setIdx((p) => (p + 1) % images.length), 3500);
@@ -20,28 +21,9 @@ export default function Home({ isAuthed = false }) {
   }, [images.length]);
 
   return (
-    <main className="page">
-      {/* Top bar muy simple */}
-      <div className="topnav">
-        <div className="container topnav-inner">
-          <a href="/" className="brand">
-            <div className="brand-dot" />
-            <span className="brand-name">ComplementAI</span>
-          </a>
-          <nav className="nav">
-            <Link to="/about">Nosotros</Link>
-            <Link to="/login">Ingresar</Link>
-            <Link to="/Assistant">Asistente</Link>
-            <Link to="/register" className="btn-pill">
-              Inscribirse
-            </Link>
-          </nav>
-        </div>
-      </div>
-
-      {/* Dos columnas: izquierda (gradiente) y derecha (imagen) */}
+    <Layout>
       <div className="split">
-        <section className="hero-left">
+        <section className="hero">
           <div className="side-rail">
             <div className="side-dot" />
             <div className="side-star">✦</div>
@@ -76,32 +58,19 @@ export default function Home({ isAuthed = false }) {
             </div>
           </div>
         </section>
-
-        <section className="hero-right">
-          <div
-            className="hero-bg"
-            style={{ backgroundImage: `url(${images[idx]})` }}
-          />
-          <div className="hero-overlay" />
-        </section>
       </div>
 
-      {/* (Opcional) sección de features */}
+      {/* Features */}
       <section id="features" className="features">
         <div className="container">
           <div className="cards">
             <div className="card">
               <h3>Motor de Plantillas</h3>
-              <p>
-                Lógica interna que sugiere la plantilla exacta según la etapa.
-              </p>
+              <p>Lógica interna que sugiere la plantilla exacta según la etapa.</p>
             </div>
             <div className="card">
               <h3>Asistente IA</h3>
-              <p>
-                Explica y justifica cada documento con respaldo en buenas
-                prácticas.
-              </p>
+              <p>Explica y justifica cada documento con respaldo en buenas prácticas.</p>
             </div>
             <div className="card">
               <h3>Trazabilidad</h3>
@@ -110,6 +79,6 @@ export default function Home({ isAuthed = false }) {
           </div>
         </div>
       </section>
-    </main>
+    </Layout>
   );
 }
