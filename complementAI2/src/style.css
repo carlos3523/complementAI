@@ -1300,3 +1300,190 @@ select:focus {
 .speak-btn.stop {
   color: #dc2626; /* rojo */
 }
+
+/* === Modal de Configuración === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: var(--shadow);
+  animation: modalFadeIn 0.25s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.modal-header h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.close-x {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.close-x:hover {
+  opacity: 0.7;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-body label {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.modal-body select {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.modal-body select:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--bg3);
+}
+
+.modal-body button {
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(to right, var(--bg1), var(--bg3));
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.modal-body button:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+
+.user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg1);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.8rem;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.user-avatar:hover {
+  background: var(--bg2);
+}
+
+.avatar-circle {
+  background: var(--bg3);
+  color: var(--text);
+  font-weight: bold;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🔽 Menú flotante (dropdown) */
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.menu-dropdown button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.menu-dropdown button:hover {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+.menu-dropdown .btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* 💨 Animación */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

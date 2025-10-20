@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import { LanguageProvider } from "./contexts/LanguageContext"; // 
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
@@ -12,6 +13,7 @@ import Progreso from "./pages/Progreso";
 export default function App() {
   return (
     <AuthProvider>
+      <LanguageProvider> {/* 👈 Envuelve todo con esto */}
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />}></Route>
@@ -24,6 +26,7 @@ export default function App() {
           <Route path="/Progreso" element={<Progreso />}></Route>
         </Routes>
       </BrowserRouter>
+      </LanguageProvider>
     </AuthProvider>
   );
 }
