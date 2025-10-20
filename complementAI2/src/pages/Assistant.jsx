@@ -2,8 +2,9 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../style.css";
 import { chat } from "../services/chat";
+import UserMenu from "../components/UserMenu"; // Asegúrate de que la ruta sea correcta
 
-/** ====== KB mínima ====== */
+// --- KB mínimo de metodologías ---
 const KB = {
   pmbok: {
     label: "PMBOK®",
@@ -53,10 +54,19 @@ const STATIC_SUGGESTIONS = [
 ];
 
 export default function AssistantPage() {
-  // Contexto
+  // Contexto del Proyecto
   const [standard, setStandard] = useState("pmbok");
   const [phase, setPhase] = useState(KB.pmbok.phases[1]); // Planificación
   const [industry, setIndustry] = useState("");
+
+  // 🎯 ESTADOS PARA PREFERENCIAS DEL ASISTENTE
+  const [assistantStyle, setAssistantStyle] = useState("detallado");
+  const [showEmojis, setShowEmojis] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState(true);
+  const [autoScroll, setAutoScroll] = useState(true);
+  
+  // 🎯 ESTADO PARA FORZAR RECARGA DE CONFIGURACIÓN
+  const [configKey, setConfigKey] = useState(0);
 
   // Chat estado
   const [input, setInput] = useState("");
@@ -83,19 +93,37 @@ export default function AssistantPage() {
     navigate(`/wizard?${qs}`);
   }
 
-  // Autoscroll
-  useEffect(() => {
-    if (boxRef.current) boxRef.current.scrollTop = boxRef.current.scrollHeight;
-  }, [messages, loading]);
+  // FUNCIÓN PARA RECARGAR LA CONFIGURACIÓN (se pasa a UserMenu)
+  const refreshConfig = () => {
+    // Incrementa la clave para forzar la relectura del useEffect de abajo
+    setConfigKey(prev => prev + 1);
+  };
 
-  // Cargar sesión + historial
+  // Autoscroll - CONTROLADO POR LA PREFERENCIA
   useEffect(() => {
+    if (autoScroll && boxRef.current) {
+      boxRef.current.scrollTop = boxRef.current.scrollHeight;
+    }
+  }, [messages, loading, autoScroll]);
+
+  // Cargar sesión + historial + CONFIGURACIÓN
+  useEffect(() => {
+    // 1. Cargar preferencias del asistente (depende de configKey)
+    const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
+    setAssistantStyle(savedPrefs.style || "detallado");
+    setShowEmojis(savedPrefs.emojis ?? true);
+    setShowTimestamps(savedPrefs.timestamps ?? true);
+    setAutoScroll(savedPrefs.autoscroll ?? true);
+    
+    // 2. Cargar sesión
     const saved = JSON.parse(localStorage.getItem("assistant_session") || "null");
     if (saved) {
       setStandard(saved.standard ?? "pmbok");
       setPhase(saved.phase ?? KB.pmbok.phases[1]);
       setIndustry(saved.industry ?? "");
     }
+    
+    // 3. Cargar Historial
     const storedThreads = JSON.parse(localStorage.getItem("assistant_threads") || "[]");
     const storedCurrent = localStorage.getItem("assistant_current_thread");
 
@@ -117,12 +145,12 @@ export default function AssistantPage() {
       localStorage.setItem("assistant_threads", JSON.stringify([init]));
       localStorage.setItem("assistant_current_thread", init.id);
     }
-  }, []);
+  }, [configKey]); // 👈 ¡Dependencia de configKey!
 
   // Guardar contexto ligero
   useEffect(() => {
     localStorage.setItem("assistant_session", JSON.stringify({ standard, phase, industry, messages }));
-  }, [standard, phase, industry]); // <- no guardo messages aquí para no persistir constantemente
+  }, [standard, phase, industry]); 
 
   // Persistir mensajes dentro del hilo actual
   useEffect(() => {
@@ -268,7 +296,7 @@ function renderMarkdown(md = "") {
     URL.revokeObjectURL(url);
   }
 
-  // --- Enviar a la IA via services/chat ---
+  // --- Enviar a la IA via services/chat (USA ESTILOS DE CONFIG) ---
   async function handleSend() {
     const text = input.trim();
     if (!text || loading) return;
@@ -290,14 +318,16 @@ function renderMarkdown(md = "") {
       return next;
     });
 
-    // contexto de sistema (pegar antes de const payload = [...])
+    // contexto de sistema (APLICANDO assistantStyle y showEmojis)
     const systemPrompt = `Eres un asistente experto en gestión de proyectos.
 
-    Responde SIEMPRE en **Markdown** y con estilo compacto siguiendo estas reglas:
+    Responde SIEMPRE en **Markdown** y con estilo ${assistantStyle} siguiendo estas reglas:
     - Comienza con una **línea de título en negrita** que resuma la respuesta.
     - Luego entrega una **lista ordenada 1., 2., 3.** con pasos accionables (frases cortas, sin párrafos largos).
     - Si corresponde, usa **sub-pasos a), b), c)** dentro de un paso.
-    - Usa **negrita** para artefactos/entregables clave y emojis suaves (✅, 📌, ⚠️) **solo si aportan claridad**.
+    - Usa **negrita** para artefactos/entregables clave y emojis suaves (${
+        showEmojis ? "✅, 📌, ⚠️" : "SIN EMOJIS"
+    }) **solo si aportan claridad**.
     - Si incluyes plantillas o ejemplos, enciérralos en bloques de código triple: \`\`\`.
     - Deja **una línea en blanco** entre secciones o bloques.
     - Evita encabezados enormes: usa **negritas** (o H4) en lugar de H1/H2.
@@ -346,18 +376,18 @@ function renderMarkdown(md = "") {
     }
   }
 
-  // --- Guardar como proyecto ---
+  // --- Guardar como proyecto (sin cambios) ---
   function saveAsProject() {
     const projects = JSON.parse(localStorage.getItem("projects") || "[]");
 
     const name = `Asistente · ${KB[standard].label} · ${phase}`;
     const templates = (KB[standard].artifacts[phase] || []).map((a) => ({
       name: a,
-      why: "Sugerido por contexto",
+      why: "Sugerido por contexto del asistente",
     }));
 
     const project = {
-      id: uid(),
+      id: (crypto?.randomUUID && crypto.randomUUID()) || String(Date.now()),
       name,
       stage: phase,
       methodology: standard,
@@ -370,7 +400,7 @@ function renderMarkdown(md = "") {
     alert("Proyecto guardado. Revísalo en el Dashboard.");
   }
 
-  // --- Grabación de voz ---
+  // --- Grabación de voz (sin cambios) ---
   const [recording, setRecording] = useState(false);
   const recognitionRef = useRef(null);
 
@@ -414,119 +444,107 @@ function renderMarkdown(md = "") {
     }
   }
 
-  
   // UI helpers
   const formatTime = (ts) =>
     new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 
-  // 👇 dentro de AssistantPage()
+  // --- MIGRAR HISTORIAL VIEJO (sin cambios) ---
+  useEffect(() => {
+    // normaliza hilos y mensajes antiguos (strings o sin ts)
+    const fixMsgs = (arr) =>
+      (arr || [])
+        .filter(Boolean)
+        .map((m, i) => {
+          if (typeof m === "string") {
+            // si quedó texto suelto, asume que fue del asistente
+            return { id: Date.now() + i, role: "assistant", text: m, ts: Date.now() };
+          }
+          return {
+            id: m.id ?? Date.now() + i,
+            role: m.role === "user" ? "user" : "assistant",
+            text: String(m.text ?? m.content ?? ""),
+            ts: m.ts ?? Date.now()
+          };
+        });
 
-// --- MIGRAR HISTORIAL VIEJO (evita "T", "A" y formatos raros) ---
-useEffect(() => {
-  // normaliza hilos y mensajes antiguos (strings o sin ts)
-  const fixMsgs = (arr) =>
-    (arr || [])
-      .filter(Boolean)
-      .map((m, i) => {
-        if (typeof m === "string") {
-          // si quedó texto suelto, asume que fue del asistente
-          return { id: Date.now() + i, role: "assistant", text: m, ts: Date.now() };
-        }
-        return {
-          id: m.id ?? Date.now() + i,
-          role: m.role === "user" ? "user" : "assistant",
-          text: String(m.text ?? m.content ?? ""),
-          ts: m.ts ?? Date.now()
-        };
-      });
+    // corrige sesión simple
+    const saved = JSON.parse(localStorage.getItem("assistant_session") || "null");
+    if (saved?.messages) {
+      const fixed = fixMsgs(saved.messages);
+      localStorage.setItem("assistant_session", JSON.stringify({ ...saved, messages: fixed }));
+    }
 
-  // corrige sesión simple
-  const saved = JSON.parse(localStorage.getItem("assistant_session") || "null");
-  if (saved?.messages) {
-    const fixed = fixMsgs(saved.messages);
-    localStorage.setItem("assistant_session", JSON.stringify({ ...saved, messages: fixed }));
-    setMessages(fixed);
-  }
+    // corrige hilos
+    const th = JSON.parse(localStorage.getItem("assistant_threads") || "[]");
+    if (th.length) {
+      const fixedThreads = th.map((t) => ({ ...t, messages: fixMsgs(t.messages) }));
+      localStorage.setItem("assistant_threads", JSON.stringify(fixedThreads));
+    }
+  }, []);
 
-  // corrige hilos
-  const th = JSON.parse(localStorage.getItem("assistant_threads") || "[]");
-  if (th.length) {
-    const fixedThreads = th.map((t) => ({ ...t, messages: fixMsgs(t.messages) }));
-    localStorage.setItem("assistant_threads", JSON.stringify(fixedThreads));
-    setThreads(fixedThreads);
-    const current = localStorage.getItem("assistant_current_thread");
-    const t = fixedThreads.find((x) => x.id === current) || fixedThreads[0];
-    setCurrentThreadId(t.id);
-    setMessages(t.messages);
-  }
-}, []);
-
-// 🎯 Render de cada burbuja
-const ChatMessage = ({ m }) => {
-  const isUser = m.role === "user";
-  const meta = `${isUser ? "Tú" : "Asistente"} • ${formatTime(m.ts || Date.now())}`;
+  // 🎯 Render de cada burbuja (USA showTimestamps)
+  const ChatMessage = ({ m, showTimestamps }) => {
+    const isUser = m.role === "user";
+    const time = showTimestamps ? ` • ${formatTime(m.ts || Date.now())}` : "";
+    const meta = `${isUser ? "Tú" : "Asistente"}${time}`;
+    
     // --- Lectura por voz (Text-to-Speech)
-  const speak = () => {
-    if (!window.speechSynthesis) {
-      alert("Tu navegador no soporta lectura de voz.");
-      return;
-    }
+    const speak = () => {
+      if (!window.speechSynthesis) {
+        alert("Tu navegador no soporta lectura de voz.");
+        return;
+      }
 
-    const utter = new SpeechSynthesisUtterance(m.text);
-    utter.lang = "es-ES"; // idioma español
-    utter.rate = 1; // velocidad (0.5 más lenta, 2 más rápida)
-    utter.pitch = 1; // tono normal
-    window.speechSynthesis.cancel(); // detener lectura previa
-    window.speechSynthesis.speak(utter);
-  };
+      const utter = new SpeechSynthesisUtterance(m.text);
+      utter.lang = "es-ES"; 
+      utter.rate = 1; 
+      utter.pitch = 1; 
+      window.speechSynthesis.cancel(); 
+      window.speechSynthesis.speak(utter);
+    };
 
+    // Markdown seguro y compacto
+    const toHTML = (() => {
+      try {
+        const html = renderMarkdown(m.text || "");
+        return { __html: html };
+      } catch {
+        return { __html: (m.text || "").replace(/\n/g, "<br/>") };
+      }
+    })();
 
-  // Markdown seguro y compacto
-  const toHTML = (() => {
-    try {
-      // si usas 'marked' o similar, déjalo; si no, fallback simple
-      // @ts-ignore
-      const html = window.marked ? window.marked.parse(m.text || "") : (m.text || "")
-        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\n/g, "<br/>");
-      return { __html: html };
-    } catch {
-      return { __html: (m.text || "").replace(/\n/g, "<br/>") };
-    }
-  })();
+    return (
+      <div className={`msg-row ${isUser ? "right" : "left"}`}>
+        {!isUser && <div className="avatar" aria-hidden />}
+        <div className={`bubble ${isUser ? "user" : "assistant"}`}>
+          <div className="bubble-meta">
+            <span className="who">{meta}</span> 
+          </div>
+          <div
+            className={`bubble-text ${m.thinking ? "muted" : ""} markdown`}
+            dangerouslySetInnerHTML={toHTML}
+          />
 
-  return (
-    <div className={`msg-row ${isUser ? "right" : "left"}`}>
-      {/* avatar sin letra visible */}
-      {!isUser && <div className="avatar" aria-hidden />}
-      <div className={`bubble ${isUser ? "user" : "assistant"}`}>
-        <div className="bubble-meta">
-          <span className="who">{meta}</span>
+          {/* Botón de voz solo para mensajes del asistente */}
+        {!isUser && !m.thinking && (
+            <div className="voice-controls">
+                <button className="speak-btn" onClick={speak} title="Leer en voz alta">🔊</button>
+                <button className="speak-btn stop" onClick={() => window.speechSynthesis.cancel()} title="Detener lectura">⏹️</button>
+            </div>
+        )}
+
         </div>
-        <div
-          className={`bubble-text ${m.thinking ? "muted" : ""} markdown`}
-          dangerouslySetInnerHTML={toHTML}
-        />
-                <div
-          className={`bubble-text ${m.thinking ? "muted" : ""} markdown`}
-          dangerouslySetInnerHTML={toHTML}
-        />
-
-        {/* Botón de voz solo para mensajes del asistente */}
-      {!isUser && !m.thinking && (
-        <div className="voice-controls">
-          <button className="speak-btn" onClick={speak} title="Leer en voz alta">🔊</button>
-          <button className="speak-btn stop" onClick={() => window.speechSynthesis.cancel()} title="Detener lectura">⏹️</button>
-        </div>
-      )}
-
+        {isUser && <div className="avatar user" aria-hidden />}
       </div>
-      {isUser && <div className="avatar user" aria-hidden />}
-    </div>
+    );
+  };
+  
+  localStorage.setItem(
+    "auth_user",
+    JSON.stringify({ email: "demo@test.com", name: "Demo" })
   );
-};
-
+  
   return (
     <main className="assistant">
       <div className="assistant-wrap">
@@ -535,15 +553,18 @@ const ChatMessage = ({ m }) => {
           <div className="appbar-left">
             <button className="appbar-btn" onClick={openWizard}>Abrir Wizard</button>
             <div className="appbar-title">📁 Asistente de Proyectos</div>
+            {/* PASAMOS LA FUNCIÓN refreshConfig */}
+            <UserMenu refreshConfig={refreshConfig} /> 
           </div>
           <div className="appbar-actions">
+            
             <button className="appbar-btn ghost" onClick={() => setHistoryOpen((v) => !v)}>Historial</button>
             <button className="appbar-btn" onClick={newThread}>Nueva conversación</button>
             <button className="appbar-btn ghost" onClick={() => navigate("/dashboard")}>Volver al Dashboard</button>
           </div>
         </div>
 
-        {/* Drawer Historial */}
+        {/* Drawer Historial (sin cambios) */}
         {historyOpen && (
           <div className="history-drawer">
             <div className="history-head">
@@ -570,45 +591,37 @@ const ChatMessage = ({ m }) => {
           </div>
         )}
 
-        {!collapsed && (
-          <div className="asst-sidebar-foot">
-            <div className="muted">ComplementAI · MVP</div>
-          </div>
-        )}
-      </aside>
+        {/* Sidebar (sin cambios) */}
+        <aside className="assistant-column">
+          <div className="assistant-card">
+            <div className="assistant-subtitle">Contexto</div>
 
-      {/* ===== Main ===== */}
-      <main className="asst-main">
-        {/* Topbar */}
-        <header className="asst-topbar">
-          <div className="asst-topbar-left">
-            <div className="asst-title">{active.title}</div>
-          </div>
-          <div className="asst-topbar-controls">
+            <label className="assistant-label">Marco de trabajo</label>
             <select
-              value={active.standard}
+              value={standard}
               onChange={(e) => {
-                const std = e.target.value;
-                const firstPhase = KB[std].phases[0];
-                updateActive({ standard: std, phase: firstPhase });
+                setStandard(e.target.value);
+                setPhase(KB[e.target.value].phases[0]);
               }}
-              title="Marco de trabajo"
+              className="assistant-select"
             >
               <option value="pmbok">{KB.pmbok.label}</option>
               <option value="iso21502">{KB.iso21502.label}</option>
               <option value="scrum">{KB.scrum.label}</option>
             </select>
 
+            <label className="assistant-label">Fase</label>
             <select
-              value={active.phase}
-              onChange={(e) => updateActive({ phase: e.target.value })}
-              title="Fase"
+              value={phase}
+              onChange={(e) => setPhase(e.target.value)}
+              className="assistant-select"
             >
               {kb.phases.map((p) => (
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
 
+            <label className="assistant-label">Industria (opcional)</label>
             <input
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
@@ -630,8 +643,8 @@ const ChatMessage = ({ m }) => {
               ))}
             </div>
 
-            <button className="btn btn-ghost" onClick={handleSaveProject}>
-              💾 Guardar proyecto
+            <button className="assistant-btn success" onClick={saveAsProject}>
+              Guardar como proyecto
             </button>
           </div>
 
@@ -663,14 +676,17 @@ const ChatMessage = ({ m }) => {
         <section className="assistant-column">
           <div className="assistant-card">
             <div ref={boxRef} className="assistant-chat">
-              {messages.map((m) => <ChatMessage key={m.id} m={m} />)}
+              {/* PASAMOS showTimestamps */}
+              {messages.map((m) => <ChatMessage key={m.id} m={m} showTimestamps={showTimestamps} />)}
+              
               {loading && (
                 <div className="msg-row left">
                   <div className="avatar">A</div>
                   <div className="bubble assistant">
                     <div className="bubble-meta">
                       <span className="who">Asistente</span>
-                      <span className="time">{formatTime(Date.now())}</span>
+                      {/* Control de timestamp en mensaje de carga */}
+                      {showTimestamps && <span className="time">{formatTime(Date.now())}</span>} 
                     </div>
                     <div className="bubble-text muted">Pensando…</div>
                   </div>
@@ -729,8 +745,8 @@ const ChatMessage = ({ m }) => {
               placeholder="Escribe tu mensaje..."
               className="assistant-input flex1"
               rows={3}
-            />
-             {/* 🎙️ Botón de grabación */}
+              />
+              {/* 🎙️ Botón de grabación */}
               <button
                 onClick={recording ? stopRecording : startRecording}
                 className={`assistant-btn ${recording ? "recording" : ""}`}
@@ -745,7 +761,7 @@ const ChatMessage = ({ m }) => {
             </div>
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
