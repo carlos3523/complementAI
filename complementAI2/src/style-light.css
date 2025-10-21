@@ -1,30 +1,31 @@
 /* =========================
-   THEME LIGHT COMPLETO
-   ========================= */
+   THEME LIGHT COMPLETO
+   ========================= */
 .light {
   --bg: #ffffff;
-  --text: #111827;
-  --muted: #202020;
+  --text: #000000; /* CAMBIO: Negro puro */
+  --muted: #202020; /* Color de texto atenuado (ya es oscuro) */
 
   --surface: #c081ff;
   --surface-2: #dcdcdc;
   --border: #383838;
-  
+
   --surface-3: #f6f6f6;
 
-  --brand-a: #7c3aed; /* purple */
-  --brand-b: #dd9fe2; /* pink */
-  --brand-c: #ed82f1; 
+--brand-a: #7c3aed; /* purple */
+--brand-b: #dd9fe2; /* pink */
+--brand-c: #ed82f1; 
 
-  --primary: #c081ff; 
-  --primary-700: #bd83ff;
+--primary: #c081ff; 
+--primary-700: #bd83ff;
 
-  --radius: 16px;
-  --shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.05);
+--radius: 16px;
+--shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+--shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.05);
 
-  --black-20: rgba(27, 27, 27, 0);
+--black-20: rgba(27, 27, 27, 0);
 }
+/* ... el resto de tu código CSS para .light se mantiene igual ... */
 
 .light html,
 .light body {
@@ -649,4 +650,34 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* =========================
+   AJUSTES ESPECÍFICOS PARA MENU DROPDOWN EN TEMA LIGHT
+   (Para forzar letras negras en el menú transparente)
+   ========================= */
+
+/* 1. Botones del menú (Configuración, Cerrar Sesión) */
+.light .menu-dropdown button {
+  color: #000000; /* Forzar texto a negro puro */
+}
+
+.light .menu-dropdown button:hover {
+  background: var(--surface-2); /* Mantener hover actual */
+  color: #000000; /* Asegurar que el texto se mantenga negro al pasar el ratón */
+}
+
+/* 2. Envoltura del ThemeToggle y sus elementos */
+/* Si ThemeToggle es solo un botón/enlace, asegúrate de que el texto sea negro también. 
+   El siguiente estilo asume que ThemeToggle está dentro de `menu-item-with-toggle`. */
+.light .menu-item-with-toggle,
+.light .menu-item-with-toggle button,
+.light .menu-item-with-toggle a {
+    color: #000000 !important;
+}
+
+/* 3. Estilo para las etiquetas de modo dentro de ThemeToggle (si las tiene) */
+/* Si el componente ThemeToggle renderiza etiquetas de 'Claro' u 'Oscuro' */
+.light .theme-toggle-label {
+    color: #000000;
 }

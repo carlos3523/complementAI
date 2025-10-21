@@ -13,7 +13,6 @@ import Progreso from "./pages/Progreso";
 export default function App() {
   return (
     <AuthProvider>
-      <LanguageProvider> {/* 👈 Envuelve todo con esto */}
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />}></Route>
@@ -26,7 +25,6 @@ export default function App() {
           <Route path="/Progreso" element={<Progreso />}></Route>
         </Routes>
       </BrowserRouter>
-      </LanguageProvider>
     </AuthProvider>
   );
 }

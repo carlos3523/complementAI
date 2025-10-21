@@ -1486,3 +1486,33 @@ select:focus {
     opacity: 1;
     transform: translateY(0);
   }}
+
+  /* =========================
+   AJUSTES ESPECÍFICOS PARA MENU DROPDOWN EN TEMA LIGHT
+   (Para forzar letras negras en el menú transparente)
+   ========================= */
+
+/* 1. Botones del menú (Configuración, Cerrar Sesión) */
+.menu-dropdown button {
+  color: #ffffff; /* Forzar texto a negro puro */
+}
+
+.menu-dropdown button:hover {
+  background: var(--surface-2); /* Mantener hover actual */
+  color: #b14fc7; /* Asegurar que el texto se mantenga negro al pasar el ratón */
+}
+
+/* 2. Envoltura del ThemeToggle y sus elementos */
+/* Si ThemeToggle es solo un botón/enlace, asegúrate de que el texto sea negro también. 
+   El siguiente estilo asume que ThemeToggle está dentro de `menu-item-with-toggle`. */
+.menu-item-with-toggle,
+.menu-item-with-toggle button,
+.menu-item-with-toggle a {
+    color: #ffffff !important;
+}
+
+/* 3. Estilo para las etiquetas de modo dentro de ThemeToggle (si las tiene) */
+/* Si el componente ThemeToggle renderiza etiquetas de 'Claro' u 'Oscuro' */
+.theme-toggle-label {
+    color: #ffffff;
+}

@@ -15,6 +15,8 @@ export default function UserMenu({ refreshConfig }) {
     const [showEmojis, setShowEmojis] = useState(true);
     const [showTimestamps, setShowTimestamps] = useState(true);
     const [autoScroll, setAutoScroll] = useState(true);
+    // 🎯 NUEVO ESTADO: Preferencia de idioma (ej: 'es' para Español, 'en' para Inglés)
+    const [language, setLanguage] = useState("es"); 
 
     // Cargar usuario y preferencias al montar
     useEffect(() => {
@@ -29,6 +31,8 @@ export default function UserMenu({ refreshConfig }) {
         setShowEmojis(savedPrefs.emojis ?? true);
         setShowTimestamps(savedPrefs.timestamps ?? true);
         setAutoScroll(savedPrefs.autoscroll ?? true);
+        // 🎯 Cargar preferencia de idioma
+        setLanguage(savedPrefs.language || "es"); // Valor por defecto: español ('es')
         
     }, []);
 
@@ -40,19 +44,26 @@ export default function UserMenu({ refreshConfig }) {
     // Función para guardar los cambios y notificar al componente padre
     const handleSaveConfig = () => {
         const prefs = {
-          style: assistantStyle,
-          emojis: showEmojis,
-          timestamps: showTimestamps,
-          autoscroll: autoScroll,
+            style: assistantStyle,
+            emojis: showEmojis,
+            timestamps: showTimestamps,
+            autoscroll: autoScroll,
+            // 🎯 Guardar preferencia de idioma
+            language: language, 
         };
         localStorage.setItem("assistant_prefs", JSON.stringify(prefs));
 
         setShowConfig(false); // Cerrar modal
 
         // Llama a la función en AssistantPage para forzar la relectura de las demás prefs
+        // Esto también debe notificar a la aplicación para cambiar el idioma globalmente
         if (refreshConfig) {
             refreshConfig(); 
         }
+
+        // 💡 Opcional: Recargar la página para aplicar el nuevo idioma
+        // Esto es común si el cambio de idioma afecta a muchos textos estáticos.
+        // window.location.reload(); 
     };
 
     if (!user) return null; 
@@ -85,7 +96,7 @@ export default function UserMenu({ refreshConfig }) {
                 </div>
             )}
 
-            {/* Modal de Configuración (no necesita cambios) */}
+            {/* Modal de Configuración */}
             {showConfig && (
                 <div className="modal-overlay" onClick={() => setShowConfig(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -97,6 +108,16 @@ export default function UserMenu({ refreshConfig }) {
                         
                         <div className="modal-body">
                             
+                            {/* 🎯 NUEVO CONTROL DE IDIOMA */}
+                            <label>Idioma de la Interfaz:</label>
+                            <select 
+                                value={language} 
+                                onChange={(e) => setLanguage(e.target.value)}
+                            >
+                                <option value="es">Español 🇪🇸</option>
+                                <option value="en">Inglés 🇬🇧</option>
+                            </select>
+
                             <label>Estilo de Respuesta IA:</label>
                             <select 
                                 value={assistantStyle} 
@@ -141,20 +162,3 @@ export default function UserMenu({ refreshConfig }) {
         </div>
     );
 }
-
-// Nota: Puedes necesitar agregar el siguiente estilo a tu CSS global 
-// para que el ThemeToggle se vea bien dentro del menú desplegable:
-/*
-.menu-item-with-toggle {
-    padding: 0.5rem 1rem;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-}
-.menu-item-with-toggle .btn-ghost {
-    // Asegura que el botón se extienda correctamente o tenga el estilo deseado
-    width: 100%;
-    text-align: left;
-    margin-left: 0 !important;
-}
-*/
