@@ -681,3 +681,846 @@
 .light .theme-toggle-label {
     color: #000000;
 }
+
+/* =========================
+   THEME LIGHT COMPLETO
+   ========================= */
+.light {
+  --bg: #ffffff;
+  --text: #000000; /* CAMBIO: Negro puro */
+  --muted: #202020; /* Color de texto atenuado (ya es oscuro) */
+
+  --surface: #c081ff;
+  --surface-2: #dcdcdc;
+  --border: #383838;
+
+  --surface-3: #f6f6f6;
+
+--brand-a: #7c3aed; /* purple */
+--brand-b: #dd9fe2; /* pink */
+--brand-c: #ed82f1; 
+
+--primary: #c081ff; 
+--primary-700: #bd83ff;
+
+--radius: 16px;
+--shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+--shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.05);
+
+--black-20: rgba(27, 27, 27, 0);
+}
+/* ... el resto de tu código CSS para .light se mantiene igual ... */
+
+.light html,
+.light body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.light .page {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.light .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* =========================
+   TOPNAV
+   ========================= */
+.light .topnav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 64px;
+  z-index: 1000;
+}
+.light .topnav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.light .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+.light .brand-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--brand-a);
+  box-shadow: var(--shadow);
+}
+.light .brand-name {
+  font-weight: 800;
+  font-size: 20px;
+}
+.light .nav a,
+.light .nav button {
+  color: var(--text);
+  text-decoration: none;
+  margin-left: 20px;
+  font-size: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.light .nav a:hover,
+.light .nav button:hover {
+  color: var(--text);
+}
+.light .btn-pill {
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* =========================
+   HERO
+   ========================= */
+.light .split {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) {
+  .light .split { grid-template-columns: 1fr 1fr; }
+}
+.light .hero {
+  background: linear-gradient(180deg,#ede9fe 0%, #d8b4fe 50%, #c084fc 100%);
+  padding: clamp(32px, 7vw, 96px) clamp(20px, 4vw, 60px);
+  min-height: calc(100dvh - 64px);
+}
+.light .hero-title {
+  font-size: clamp(32px, 5vw, 64px);
+  font-weight: 800;
+  line-height: 1.05;
+}
+.light .hero-p {
+  margin-top: 16px;
+  color: var(--muted);
+  max-width: 560px;
+}
+.light .cta-row {
+  margin-top: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.light .btn-primary {
+  background: var(--primary);
+  color: #000000;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.light .btn-primary:hover {
+  filter: brightness(1.05);
+}
+.light .link {
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+/* =========================
+   FEATURES
+   ========================= */
+.light .features {
+  background: var(--surface-2);
+  padding: 64px 0;
+}
+.light .features .cards {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  padding: clamp(24px, 4vw, 40px);
+}
+.light .features .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+
+/* =========================
+   AUTH
+   ========================= */
+.light .auth {
+  background: var(--bg);
+  color: var(--text);
+}
+.light .auth-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.light .input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.light .input:focus {
+  border-color: var(--brand-b);
+  box-shadow: 0 0 0 2px rgba(219,39,119,0.25);
+}
+
+/* =========================
+   PANELS
+   ========================= */
+.light .panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+.light .side-title {
+  font-weight: 800;
+  font-size: 18px;
+}
+.light .muted { color: var(--muted); }
+
+/* =========================
+   BADGES
+   ========================= */
+.light .badge {
+  background: #f3f4f6;
+  color: var(--text);
+}
+.light .badge.subtle {
+  background: #e5e7eb;
+}
+
+/* =========================
+   APPBAR
+   ========================= */
+.light .appbar {
+  background: linear-gradient(90deg, var(--brand-a), var(--brand-b), var(--brand-c));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 16px;
+  margin: -54px 0 18px;
+}
+.light .appbar-title { color: #000000; font-weight: 800; }
+
+/* =========================
+   BUTTONS
+   ========================= */
+.light .btn-ghost {
+  background: rgba(0,0,0,0.05);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.light .btn-danger {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+/* =========================
+   SCROLLBAR
+   ========================= */
+.light * {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 transparent;
+}
+.light *::-webkit-scrollbar-thumb {
+  background: #a1a1aa;
+  border-radius: 999px;
+}
+
+/* =========================
+   RESPONSIVE / DASHBOARD / WIZARD
+   ========================= */
+@media (max-width: 1024px) {
+  .light .wizard .wrap { grid-template-columns: 1fr; }
+  .light .grid2 { grid-template-columns: 1fr; }
+  .light .appbar { margin: -38px 0 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .light * { transition: none !important; }
+}
+.light .dashboard .cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 18px;
+}
+.light .panel { padding: 20px; border-radius: 16px; }
+.light .card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.light .card-title { font-weight: 800; font-size: 18px; }
+.light .card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.light .card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.light .card-actions .btn-ghost,
+.light .card-actions .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+}
+.light .panel .list { margin-top: 10px; }
+.light .panel .list li { margin: 8px 0; }
+.light .wizard .panel { padding: 24px; }
+.light .wizard .side-title { font-size: 22px; }
+.light .wizard .list li { margin: 10px 0; }
+.light .input,
+.light select,
+.light textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.light .input:focus,
+.light select:focus {
+  border-color: var(--brand-b);
+  box-shadow: 0 0 0 3px rgba(219,39,119,0.25);
+}
+.light .btn-danger { margin: 0; }
+@media (max-width: 1024px) {
+  .light .dashboard .cards {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+.light .split {
+  display: block !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+}
+.light .hero {
+  background: linear-gradient(180deg,#ede9fe 0%, #d8b4fe 50%, #c084fc 100%);
+}
+
+/* =========================
+   NAV / DRAWER
+   ========================= */
+.light .nav-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  color: #111;
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+@media (max-width:900px){
+  /* 🔒 Desactivar totalmente el viejo overlay */
+  .light .nav,
+  .light .nav.is-open {
+    display: none !important;
+  }
+
+  /* 🔑 Solo mostrar el botón hamburguesa */
+  .light .nav-toggle {
+    display: inline-flex;
+  }
+}
+
+.light .nav-desktop{ display:flex; align-items:center; gap:0; }
+.light .drawer {
+  position:fixed; top:64px; right:0;
+  height: calc(100dvh - 64px);
+  width: min(320px, 85vw);
+  background: #fff;
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+  transform: translateX(100%);
+  transition: transform .25s ease;
+  z-index:1110;
+  display:flex;
+  flex-direction:column;
+}
+.light .drawer.is-open{ transform:translateX(0); }
+.light .drawer-menu{
+  display:flex;
+  flex-direction:column;
+  padding:16px;
+  gap:12px;
+}
+.light .drawer-menu a{
+  color: var(--text);
+  text-decoration:none;
+  padding:12px 10px;
+  border-radius:10px;
+  font-size:16px;
+  line-height:1.2;
+}
+.light .drawer-menu a:hover{ background: var(--surface-2); }
+.light .drawer-menu .btn-pill{
+  background: var(--primary);
+  color:#fff;
+}
+
+/* =========================
+   CHAT
+   ========================= */
+.light .assistant-chat { padding: 10px; background: var(--surface-3); }
+.light .msg-row { margin: 8px 0; gap: 8px; }
+.light .bubble { padding: 10px 12px; }
+.light .bubble-meta {
+  margin-bottom: 6px;
+  opacity: .85;
+  font-size: 12px;
+  color: var(--muted);
+}
+.light .bubble-meta .who { font-weight: 600; color: var(--text); }
+.light .bubble.assistant { background: var(--surface-2); color: var(--text); }
+.light .bubble.user { background: var(--primary); color: #fff; }
+.light .md-code {
+  background: #f3f4f6;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  overflow: auto;
+  color: var(--text);
+}
+.light .bubble code {
+  background: #e5e7eb;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.light .bubble-text.markdown { line-height: 1.5; }
+.light .bubble-text.markdown h1,
+.light .bubble-text.markdown h2,
+.light .bubble-text.markdown h3 {
+  margin: 8px 0 6px;
+  line-height: 1.25;
+}
+
+.light .bubble { 
+  padding: 10px 12px; 
+  border-radius: 16px; /* suaviza las esquinas */
+}
+
+.light .speak-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  margin-top: 4px;
+  color: var(--text);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.light .speak-btn:hover {
+  opacity: 1;
+}
+
+.light .voice-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.light .speak-btn.stop {
+  color: #dc2626; /* rojo */
+}
+
+/* === Modal de Configuración === */
+.light .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.light .modal {
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: var(--shadow);
+  animation: modalFadeIn 0.25s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.light .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.light .modal-header h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.light .close-x {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.light .close-x:hover {
+  opacity: 0.7;
+}
+
+.light .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.light .modal-body label {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.light .modal-body select {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.light .modal-body select:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--bg3);
+}
+
+.light .modal-body button {
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(to right, var(--bg1), var(--bg3));
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.light .modal-body button:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+
+.light .user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.light .user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg1);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.8rem;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.light .user-avatar:hover {
+  background: var(--bg2);
+}
+
+.light .avatar-circle {
+  background: var(--bg3);
+  color: var(--text);
+  font-weight: bold;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🔽 Menú flotante (dropdown) */
+.light .menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.light .menu-dropdown button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.light .menu-dropdown button:hover {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+.light .menu-dropdown .btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* 💨 Animación */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================
+   AJUSTES ESPECÍFICOS PARA MENU DROPDOWN EN TEMA LIGHT
+   (Para forzar letras negras en el menú transparente)
+   ========================= */
+
+/* 1. Botones del menú (Configuración, Cerrar Sesión) */
+.light .menu-dropdown button {
+  color: #000000; /* Forzar texto a negro puro */
+}
+
+.light .menu-dropdown button:hover {
+  background: var(--surface-2); /* Mantener hover actual */
+  color: #000000; /* Asegurar que el texto se mantenga negro al pasar el ratón */
+}
+
+/* 2. Envoltura del ThemeToggle y sus elementos */
+/* Si ThemeToggle es solo un botón/enlace, asegúrate de que el texto sea negro también. 
+   El siguiente estilo asume que ThemeToggle está dentro de `menu-item-with-toggle`. */
+.light .menu-item-with-toggle,
+.light .menu-item-with-toggle button,
+.light .menu-item-with-toggle a {
+    color: #000000 !important;
+}
+
+/* 3. Estilo para las etiquetas de modo dentro de ThemeToggle (si las tiene) */
+/* Si el componente ThemeToggle renderiza etiquetas de 'Claro' u 'Oscuro' */
+.light .theme-toggle-label {
+    color: #000000;
+}
+
+/* =========================
+   VARIABLES Y ESTILOS BASE DEL TEMA LIGHT
+   (El bloque que proporcionaste)
+   ========================= */
+.light {
+    --bg: #ffffff;
+    --text: #000000;
+    --muted: #202020;
+
+    --surface: #c081ff;
+    --surface-2: #dcdcdc;
+    --border: #383838;
+
+    --surface-3: #f6f6f6; /* Usado para fondos de tarjetas en modo light */
+
+    --brand-a: #7c3aed;
+    --brand-b: #dd9fe2;
+    --brand-c: #ed82f1;
+
+    --primary: #c081ff;
+    --primary-700: #bd83ff;
+
+    --radius: 16px;
+    --shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.05);
+
+    /* Colores funcionales para elementos de progreso que no cambian de color */
+    --color-done-bg: #22c55e;
+    --color-done-text: #16a34a;
+    --color-current-bg: #60a5fa;
+    --color-current-text: #3b82f6;
+}
+
+/* Aplica variables base a la página */
+.light body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.light .progreso-page {
+    /* Fondo: Usamos el fondo claro general del body, no el radial oscuro */
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+}
+
+/* ================================== */
+/* TEMAS ESPECÍFICOS PARA EL COMPONENTE PROGRESO */
+/* Sobreescribe .progreso-x dentro del selector .light */
+/* ================================== */
+
+/* === ESTILOS GENERALES DE COMPONENTES === */
+.light .progreso-card {
+    background: var(--surface-3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.light .progreso-muted,
+.light .progreso-muted-small {
+    color: var(--muted);
+}
+
+/* === BARRA DE PROGRESO === */
+.light .progreso-progress-track {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.light .progreso-progress-bar {
+    /* Mantiene el gradiente de marca */
+    background: linear-gradient(90deg, var(--brand-a), var(--brand-c));
+}
+
+/* === LÍNEA TEMPORAL HORIZONTAL === */
+
+.light .progreso-connector.next {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.light .progreso-dot {
+    border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.light .progreso-dot.done {
+    background: var(--color-done-bg);
+    border-color: var(--color-done-text);
+}
+
+.light .progreso-dot.current {
+    background: var(--color-current-bg);
+    border-color: var(--color-current-text);
+    box-shadow: 0 0 0 6px rgba(96, 165, 250, 0.25);
+}
+
+.light .progreso-dot.next {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.light .progreso-timeline-item-wrap .progreso-connector.done {
+    background: rgba(34, 197, 94, 0.8);
+}
+
+.light .progreso-artifacts {
+    color: var(--muted);
+}
+
+
+/* === LISTA VERTICAL RESUMIDA === */
+.light .progreso-row {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #fcfcfc;
+}
+
+.light .progreso-badge {
+    border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.light .progreso-badge.done {
+    border-color: var(--color-done-text);
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--color-done-text);
+}
+
+.light .progreso-badge.current {
+    border-color: var(--color-current-text);
+    background: rgba(96, 165, 250, 0.1);
+    color: var(--color-current-text);
+}
+
+.light .progreso-badge.next {
+    border-color: rgba(0, 0, 0, 0.25);
+    background: transparent;
+    color: var(--muted);
+}
+
+/* === BOTONES === */
+.light .progreso-primary-btn {
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    color: #fff;
+    font-weight: 600; /* Asegurar la fuente si no está en las variables */
+    cursor: pointer; /* Asegurar cursor */
+    box-shadow: var(--shadow-sm);
+}
+
+.light .progreso-ghost-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: var(--text);
+    font-weight: 600; /* Asegurar la fuente si no está en las variables */
+    cursor: pointer; /* Asegurar cursor */
+}
+
+/* Otros estilos del tema light que proporcionaste... */
+/* [El resto de .light .topnav, .light .hero, etc. que ya tienes...] */
+/* ... */
