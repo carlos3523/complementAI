@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node --watch ./src/index.js",
     "start": "node ./src/index.js",
-    "db:init": "cross-env PGPASSWORD=Deltahecta5 psql -h localhost -p 5433 -U postgres -d implementai -f ./src/sql/schema.sql"
+    "db:init": "cross-env PGPASSWORD=Deltahecta5 psql -h localhost -p 5432 -U postgres -d implementai -f ./src/sql/schema.sql"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
