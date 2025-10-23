@@ -14,9 +14,12 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "i18next": "^25.6.0",
+    "node-localstorage": "^3.0.5",
     "pg": "^8.16.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-i18next": "^16.1.0",
     "react-router-dom": "^6.30.1"
   },
   "devDependencies": {
