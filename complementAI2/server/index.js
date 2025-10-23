@@ -79,32 +79,64 @@ app.post("/api/login", async (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, model = "deepseek/deepseek-chat-v3.1:free" } = req.body;
+    // Modelo preferido desde el front; si no viene, usa uno conocido.
+    // Ojo: muchos "free" NO soportan zero-retention.
+    const preferredModel = req.body.model || "deepseek/deepseek-chat-v3.1";
+    const messages = req.body.messages || [];
 
-    const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": process.env.SITE_URL || "",
-        "X-Title": process.env.SITE_NAME || "ComplementAI",
-      },
-      body: JSON.stringify({ model, messages }),
-    });
+    const baseHeaders = {
+      "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.SITE_URL || "",
+      "X-Title": process.env.SITE_NAME || "ComplementAI",
+      // IMPORTANTE: No enviamos ningún header de "data-collection opt-out" aquí.
+    };
 
-    if (!r.ok) {
+    async function callOpenRouter(modelToUse) {
+      const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: baseHeaders,
+        body: JSON.stringify({
+          model: modelToUse,
+          messages,
+          // Puedes agregar parámetros opcionales:
+          // temperature: 0.7, max_tokens: 1024,
+        }),
+      });
       const text = await r.text();
-      console.error("OpenRouter error", r.status, text);
-      return res.status(r.status).json({ error: text });
+      let json = null;
+      try { json = JSON.parse(text); } catch (_) {}
+
+      return { ok: r.ok, status: r.status, text, json };
     }
 
-    const data = await r.json();
-    res.json(data);
+    // Intento 1: modelo pedido
+    let resp = await callOpenRouter(preferredModel);
+
+    // Si falla por política de privacidad (404) reintenta con "openrouter/auto"
+    const policyError =
+      resp.status === 404 &&
+      typeof resp.text === "string" &&
+      resp.text.toLowerCase().includes("no endpoints found matching your data policy");
+
+    if (policyError) {
+      console.warn("[OpenRouter] 404 por data policy con modelo:", preferredModel, "-> reintentando con openrouter/auto");
+      resp = await callOpenRouter("openrouter/auto");
+    }
+
+    if (!resp.ok) {
+      console.error("OpenRouter error", resp.status, resp.text);
+      return res.status(resp.status).json({ error: resp.text || "Upstream error" });
+    }
+
+    // Devuelve el JSON tal cual OpenRouter (para no romper tu frontend/services/chat)
+    return res.json(resp.json);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: "Server error" });
   }
 });
+
 
 const PORT = process.env.PORT || 8787;
 app.listen(PORT, () => console.log("✅ API running on http://localhost:" + PORT));
