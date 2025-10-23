@@ -1,29 +1,34 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from "./routes/ProtectedRoute";
+// src/App.jsx
+import { Routes, Route } from "react-router-dom";
+
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
-import Progreso from "./pages/Progreso";
+import Progreso from "./pages/Progreso.jsx";
 
+import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />}></Route>
-        <Route path="/login" element={<Login />}></Route>
-        <Route path="/register" element={<Register />}></Route>
-        <Route path="*" element={<Home />} />
-        <Route path="/Assistant" element={<Assistant />}></Route>
-        <Route path="/Wizard" element={<Wizard />}></Route>
-        <Route path="/DashBoard" element={<DashBoard />}></Route>
-        <Route path="/Progreso" element={<Progreso />}></Route>
-      </Routes>
-    </BrowserRouter>
-    
+    <Routes>
+      {/* públicas */}
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/assistant" element={<Assistant />} />
+
+      {/* privadas (bloque con Outlet) */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/wizard" element={<Wizard />} />
+        <Route path="/dashboard" element={<DashBoard />} />
+        <Route path="/progreso/:id" element={<Progreso />} />
+      </Route>
+
+      {/* fallback */}
+      <Route path="*" element={<Home />} />
+    </Routes>
   );
 }

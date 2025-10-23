@@ -1,607 +1,561 @@
-// src/pages/Assistant.jsx
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../style.css";
 import { chat } from "../services/chat";
-import { useLayoutEffect } from "react";
-// --- KB mínimo de metodologías ---
-const KB = {
-  pmbok: {
-    label: "PMBOK®",
-    phases: [
-      "Inicio",
-      "Planificación",
-      "Ejecución",
-      "Monitoreo y Control",
-      "Cierre",
-    ],
-    artifacts: {
-      Inicio: [
-        "Acta de Constitución",
-        "Identificación de Stakeholders",
-        "Caso de Negocio",
-      ],
-      Planificación: [
-        "WBS/EDT",
-        "Cronograma (Gantt)",
-        "Presupuesto",
-        "Plan de Riesgos",
-        "Plan de Calidad",
-        "Comunicaciones",
-      ],
-      Ejecución: ["Gestión de Cambios", "Reportes de Avance"],
-      "Monitoreo y Control": [
-        "EVM (PV, EV, AC)",
-        "Seguimiento de Riesgos",
-        "Control de Calidad",
-      ],
-      Cierre: ["Informe Final", "Lecciones Aprendidas"],
-    },
-    checks: {
-      Inicio: [
-        "Sponsor definido",
-        "Objetivos SMART",
-        "Stakeholders priorizados",
-      ],
-      Planificación: [
-        "Línea base alcance-tiempo-costo",
-        "Riesgos con respuesta",
-        "Matriz RACI",
-      ],
-    },
-  },
-  iso21502: {
-    label: "ISO 21502",
-    phases: [
-      "Inicio",
-      "Planificación",
-      "Ejecución",
-      "Monitoreo y Control",
-      "Cierre",
-    ],
-    artifacts: {
-      Inicio: ["Mandato del Proyecto"],
-      Planificación: [
-        "Plan de Dirección",
-        "Gestión de Beneficios",
-        "Gestión de Interesados",
-      ],
-      Ejecución: ["Gestión de Recursos", "Adquisiciones"],
-      "Monitoreo y Control": ["Revisión de Beneficios", "Aseguramiento"],
-      Cierre: ["Transferencia Operacional"],
-    },
-    checks: {
-      Planificación: [
-        "Beneficios vinculados a estrategia",
-        "Controles de calidad definidos",
-      ],
-    },
-  },
-  scrum: {
-    label: "Scrum / Ágil",
-    phases: ["Descubrimiento", "Ejecución Iterativa", "Cierre"],
-    artifacts: {
-      Descubrimiento: ["Visión de Producto", "Product Backlog"],
-      "Ejecución Iterativa": ["Sprint Backlog", "Increment", "DoD/DoR"],
-      Cierre: ["Release Notes", "Retro final"],
-    },
-    checks: {
-      "Ejecución Iterativa": [
-        "Ceremonias activas",
-        "Backlog priorizado",
-        "DoD aplicado",
-      ],
-    },
-  },
-};
+import { updateTheme } from "../services/auth";
+import AuthButton from "../components/AuthButton";
+import { useAuth } from "../contexts/AuthContext";
+import "./assistant.css";
 
-const STATIC_SUGGESTIONS = [
-  "Genera el Acta de Constitución",
-  "Crea la WBS/EDT",
-  "Propón cronograma inicial",
-  "Arma el registro de riesgos",
-  "Diseña la matriz RACI",
-];
+/* ===============================
+   Persistencia (localStorage)
+   =============================== */
+const LS_THREADS = "asst_threads_v1";
+const now = () => Date.now();
 
-export default function AssistantPage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    () => localStorage.getItem("assistant_sidebar") === "collapsed"
-  );
-  useEffect(() => {
-    localStorage.setItem(
-      "assistant_sidebar",
-      sidebarCollapsed ? "collapsed" : "open"
-    );
-  }, [sidebarCollapsed]);
-  // Contexto
-  const [standard, setStandard] = useState("pmbok");
-  const [phase, setPhase] = useState(KB.pmbok.phases[1]); // Planificación
-  const [industry, setIndustry] = useState("");
-
-  // Chat estado
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
+const seedThread = () => ({
+  id: String(now()),
+  title: "Nueva conversación",
+  createdAt: now(),
+  messages: [
     {
       id: 1,
       role: "assistant",
       text: "Asistente listo ✅ — Assistant Lite",
-      ts: Date.now(),
+      ts: now(),
     },
-  ]);
+  ],
+});
+
+/* ===============================
+   HERO (landing) estilo DeepSeek
+   =============================== */
+function EmptyHero({ value, setValue, onSend }) {
+  return (
+    <div className="hero-shell">
+      <div className="hero-logo" aria-hidden>
+        🜲
+      </div>
+      <h1 className="hero-title">How can I help you?</h1>
+
+      <div className="hero-composer">
+        <textarea
+          className="hero-input"
+          rows={2}
+          placeholder="Message Assistant"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSend();
+            }
+          }}
+        />
+        <div className="hero-actions">
+          <button className="hero-icon" title="Adjuntar">
+            📎
+          </button>
+          <button className="hero-send" onClick={onSend} title="Enviar">
+            ↑
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===============================
+   Página principal
+   =============================== */
+export default function AssistantPage() {
+  const { user, token } = useAuth();
+
+  //clave de almacenamiento por usuario o guest
+  const STORAGE_KEY = `asst_threads_v1_${user?.id || "guest"}`;
+
+  const navigate = useNavigate();
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("asst_theme") || "ink"
+  );
+  useEffect(() => localStorage.setItem("asst_theme", theme), [theme]);
+
+  /** ---------- UI ---------- */
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
-  // Historial (múltiples hilos)
-  const [threads, setThreads] = useState([]); // [{id,title,createdAt,messages:[]}]
-  const [currentThreadId, setCurrentThreadId] = useState(null);
+  /** ---------- Hilos / historial ---------- */
+  const [threads, setThreads] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return saved.length ? saved : [seedThread()];
+  });
+  const [currentId, setCurrentId] = useState(threads[0].id);
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
-  const kb = KB[standard];
-  const artifacts = kb.artifacts[phase] || [];
-  const checks = (kb.checks && kb.checks[phase]) || [];
+  const current = threads.find((t) => t.id === currentId) || threads[0];
+  const [messages, setMessages] = useState(current.messages);
 
-  const navigate = useNavigate();
-  const boxRef = useRef(null);
-  const bottomRef = useRef(null);
+  /** refs para auto-scroll */
+  const endRef = useRef(null);
 
-  function openWizard() {
-    const qs = new URLSearchParams({
-      standard,
-      phase,
-      domain: industry || "",
-    }).toString();
-    navigate(`/wizard?${qs}`);
+  /** ¿hay mensajes de usuario en el hilo? */
+  const hasUserMsgs = messages.some((m) => m.role === "user");
+
+  // cuando cambia el usuario (o pasa de guest→logueado), re-carga su propio historial
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    setThreads(saved.length ? saved : [seedThread()]);
+  }, [STORAGE_KEY]);
+
+  // persiste usando la nueva clave por usuario
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(threads));
+  }, [threads, STORAGE_KEY]);
+
+  /** re-sincroniza mensajes cuando cambia el hilo activo */
+  useEffect(() => {
+    setMessages(current.messages || []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId]);
+
+  /** persiste hilos en localStorage */
+  useEffect(() => {
+    localStorage.setItem(LS_THREADS, JSON.stringify(threads));
+  }, [threads]);
+
+  /** propaga cambios de mensajes al hilo actual */
+  useEffect(() => {
+    setThreads((prev) =>
+      prev.map((t) => (t.id === currentId ? { ...t, messages } : t))
+    );
+  }, [messages, currentId]);
+
+  /** auto-scroll cuando cambian mensajes o loading */
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, loading]);
+
+  /** título inteligente desde el primer mensaje del usuario */
+  function smartTitleFrom(text) {
+    const oneLine = text.replace(/\s+/g, " ").trim();
+    const first = oneLine.split(/[.!?]|$/)[0].trim();
+    return (first || oneLine).slice(0, 60) || "Sin título";
   }
 
-  /* Auto-scroll cuando cambian mensajes o loading */
-  useLayoutEffect(() => {
-    // espera al siguiente frame para que el DOM pinte
-    requestAnimationFrame(() => {
-      if (bottomRef.current) bottomRef.current.scrollIntoView({ block: "end" });
-      else if (boxRef.current)
-        boxRef.current.scrollTop = boxRef.current.scrollHeight;
-    });
-  }, [messages, loading]);
-  // Cargar sesión + historial
-  useEffect(() => {
-    const saved = JSON.parse(
-      localStorage.getItem("assistant_session") || "null"
-    );
-    if (saved) {
-      setStandard(saved.standard ?? "pmbok");
-      setPhase(saved.phase ?? KB.pmbok.phases[1]);
-      setIndustry(saved.industry ?? "");
-    }
-    const storedThreads = JSON.parse(
-      localStorage.getItem("assistant_threads") || "[]"
-    );
-    const storedCurrent = localStorage.getItem("assistant_current_thread");
+  /** enviar mensaje */
+  async function handleSend() {
+    setErrMsg("");
+    const text = input.trim();
+    if (!text || loading) return;
 
-    if (storedThreads.length) {
-      setThreads(storedThreads);
-      const t =
-        storedThreads.find((x) => x.id === storedCurrent) || storedThreads[0];
-      setCurrentThreadId(t.id);
-      setMessages(t.messages);
-    } else {
-      const init = {
-        id: String(Date.now()),
-        title: "Nueva conversación",
-        createdAt: Date.now(),
-        messages: [
-          {
-            id: 1,
-            role: "assistant",
-            text: "Asistente listo ✅ — Assistant Lite",
-            ts: Date.now(),
-          },
-        ],
-      };
-      setThreads([init]);
-      setCurrentThreadId(init.id);
-      setMessages(init.messages);
-      localStorage.setItem("assistant_threads", JSON.stringify([init]));
-      localStorage.setItem("assistant_current_thread", init.id);
-    }
-  }, []);
+    const userMsg = { id: now(), role: "user", text, ts: now() };
+    setMessages((m) => [...m, userMsg]);
+    setInput("");
+    setLoading(true);
 
-  // Guardar contexto ligero
-  useEffect(() => {
-    localStorage.setItem(
-      "assistant_session",
-      JSON.stringify({ standard, phase, industry })
-    );
-  }, [standard, phase, industry]);
-
-  // Persistir mensajes dentro del hilo actual
-  useEffect(() => {
-    if (!currentThreadId) return;
-    setThreads((prev) => {
-      const copy = prev.map((t) =>
-        t.id === currentThreadId ? { ...t, messages } : t
-      );
-      localStorage.setItem("assistant_threads", JSON.stringify(copy));
-      return copy;
-    });
-  }, [messages, currentThreadId]);
-
-  const dynamicSuggestions = useMemo(() => {
-    const setx = new Set(STATIC_SUGGESTIONS);
-    artifacts.slice(0, 3).forEach((a) => setx.add("Genera plantilla: " + a));
-    return Array.from(setx).slice(0, 8);
-  }, [artifacts]);
-
-  // === Historial: utilidades ===
-  function newThread() {
-    const t = {
-      id: String(Date.now()),
-      title: "Nueva conversación",
-      createdAt: Date.now(),
-      messages: [
+    try {
+      const responseText = await chat([
         {
-          id: Date.now(),
-          role: "assistant",
-          text: "¡Nuevo chat! ¿En qué te ayudo?",
-          ts: Date.now(),
+          role: "system",
+          content: "You are ComplementAI, an assistant for project management.",
         },
-      ],
-    };
-    setThreads((prev) => {
-      const next = [t, ...prev];
-      localStorage.setItem("assistant_threads", JSON.stringify(next));
-      return next;
-    });
-    setCurrentThreadId(t.id);
+        { role: "user", content: text },
+      ]);
+      const aiMsg = {
+        id: now() + 1,
+        role: "assistant",
+        text: responseText,
+        ts: now(),
+      };
+      setMessages((m) => [...m, aiMsg]);
+    } catch (err) {
+      console.error(err);
+      setErrMsg(err.message || "Error al obtener respuesta del asistente");
+    } finally {
+      setLoading(false);
+    }
+
+    // Renombrar hilo si es el primer mensaje del usuario
+    const isFirstUserMsg = !messages.some((m) => m.role === "user");
+    if (isFirstUserMsg) {
+      const newTitle = smartTitleFrom(text);
+      setThreads((prev) =>
+        prev.map((t) => (t.id === currentId ? { ...t, title: newTitle } : t))
+      );
+    }
+  }
+
+  /** ---------- acciones del historial ---------- */
+  function newThread() {
+    const t = seedThread();
+    setThreads([t, ...threads]);
+    setCurrentId(t.id);
     setMessages(t.messages);
   }
 
   function selectThread(id) {
     const t = threads.find((x) => x.id === id);
     if (!t) return;
-    setCurrentThreadId(id);
-    setMessages(t.messages);
+    setCurrentId(id);
+    setMenuOpenId(null);
+    setEditingId(null);
   }
 
   function deleteThread(id) {
     const next = threads.filter((t) => t.id !== id);
+    if (!next.length) {
+      const t = seedThread();
+      setThreads([t]);
+      setCurrentId(t.id);
+      setMessages(t.messages);
+      return;
+    }
     setThreads(next);
-    localStorage.setItem("assistant_threads", JSON.stringify(next));
-    if (next.length) {
-      setCurrentThreadId(next[0].id);
-      setMessages(next[0].messages);
-    } else {
-      newThread();
-    }
+    const fallback =
+      id === currentId
+        ? next[0]
+        : next.find((t) => t.id === currentId) || next[0];
+    setCurrentId(fallback.id);
+    setMessages(fallback.messages);
   }
 
-  function exportThread(id) {
-    const t = threads.find((x) => x.id === id);
-    if (!t) return;
-    const blob = new Blob([JSON.stringify(t, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `assistant-thread-${id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // --- Enviar a la IA via services/chat ---
-  async function handleSend() {
-    const text = input.trim();
-    if (!text || loading) return;
-
-    const userMsg = { id: Date.now(), role: "user", text, ts: Date.now() };
-    setMessages((m) => [...m, userMsg]);
-    setInput("");
-    setErrMsg("");
-    setLoading(true);
-
-    // renombrar conversación si es nueva
-    setThreads((prev) => {
-      const next = prev.map((t) =>
-        t.id === currentThreadId &&
-        (t.title === "Nueva conversación" || !t.title)
-          ? { ...t, title: text.slice(0, 60) }
-          : t
-      );
-      localStorage.setItem("assistant_threads", JSON.stringify(next));
-      return next;
-    });
-
-    const systemPrompt = `Eres un asistente experto en gestión de proyectos.
-Responde SIEMPRE en Markdown, compacto y accionable.`;
-
-    const history = messages
-      .filter((m) => m.role === "user" || m.role === "assistant")
-      .slice(-8)
-      .map((m) => ({ role: m.role, content: m.text }));
-
-    const payload = [
-      { role: "system", content: systemPrompt },
-      ...history,
-      { role: "user", content: text },
-    ];
-
-    // “Pensando…”
-    const thinking = {
-      id: Date.now() + 1,
-      role: "assistant",
-      text: "Pensando…",
-      ts: Date.now(),
-      thinking: true,
-    };
-    setMessages((m) => [...m, thinking]);
-
-    try {
-      const content = await chat(payload); // llama a tu /api/chat
-      setMessages((m) =>
-        m.map((mm) =>
-          mm.thinking ? { ...mm, thinking: false, text: content || "…" } : mm
-        )
-      );
-    } catch (e) {
-      console.error(e);
-      setErrMsg("Ocurrió un error consultando a la IA. Intenta de nuevo.");
-      setMessages((m) =>
-        m.map((mm) =>
-          mm.thinking
-            ? {
-                ...mm,
-                thinking: false,
-                text: "⚠️ No pude consultar a la IA ahora. ¿Quieres reintentar?",
-              }
-            : mm
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const formatTime = (ts) =>
-    new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  // 🎯 Render de cada burbuja
-  const ChatMessage = ({ m }) => {
-    const isUser = m.role === "user";
-    const meta = `${isUser ? "Tú" : "Asistente"} • ${formatTime(
-      m.ts || Date.now()
-    )}`;
-    return (
-      <div className={`msg-row ${isUser ? "right" : "left"}`}>
-        {!isUser && <div className="avatar" aria-hidden />}
-        <div className={`bubble ${isUser ? "user" : "assistant"}`}>
-          <div className="bubble-meta">
-            <span className="who">{meta}</span>
-          </div>
-          <div className={`bubble-text ${m.thinking ? "muted" : ""} markdown`}>
-            {String(m.text || "")}
-          </div>
-        </div>
-        {isUser && <div className="avatar user" aria-hidden />}
-      </div>
+  function renameThread(id, title) {
+    setThreads((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, title: title.trim() || "Sin título" } : t
+      )
     );
-  };
+  }
 
-  const kbPanel = (
-    <div className="panel">
-      <div className="side-title">Contexto</div>
-
-      <label className="label">Marco de trabajo</label>
-      <select
-        value={standard}
-        onChange={(e) => {
-          setStandard(e.target.value);
-          setPhase(KB[e.target.value].phases[0]);
-        }}
-      >
-        <option value="pmbok">{KB.pmbok.label}</option>
-        <option value="iso21502">{KB.iso21502.label}</option>
-        <option value="scrum">{KB.scrum.label}</option>
-      </select>
-
-      <label className="label" style={{ marginTop: 8 }}>
-        Fase
-      </label>
-      <select value={phase} onChange={(e) => setPhase(e.target.value)}>
-        {KB[standard].phases.map((p) => (
-          <option key={p} value={p}>
-            {p}
-          </option>
-        ))}
-      </select>
-
-      <label className="label" style={{ marginTop: 8 }}>
-        Industria (opcional)
-      </label>
-      <input
-        className="input"
-        value={industry}
-        onChange={(e) => setIndustry(e.target.value)}
-        placeholder="Salud, Retail, Banca…"
-      />
-
-      <div className="chips">
-        {dynamicSuggestions.map((s, i) => (
-          <button
-            key={i}
-            className="chip"
-            onClick={() => setInput((prev) => (prev ? prev + "\n" + s : s))}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <button className="btn-primary" onClick={openWizard}>
-        Abrir Wizard
-      </button>
-      <button
-        className="btn-ghost"
-        style={{ marginLeft: 8 }}
-        onClick={() => navigate("/dashboard")}
-      >
-        Volver al Dashboard
-      </button>
-
-      <div className="muted" style={{ marginTop: 12 }}>
-        Conocimiento · {kb.label}
-      </div>
-      <div className="muted">Fase: {phase}</div>
-
-      {artifacts.length > 0 && (
-        <>
-          <div className="badge" style={{ marginTop: 8 }}>
-            Artefactos
-          </div>
-          <ul className="list">
-            {artifacts.map((a) => (
-              <li key={a}>{a}</li>
-            ))}
-          </ul>
-        </>
-      )}
-      {checks.length > 0 && (
-        <>
-          <div className="badge subtle" style={{ marginTop: 6 }}>
-            Checks
-          </div>
-          <ul className="list">
-            {checks.map((c) => (
-              <li key={c}>{c}</li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-
+  /** ---------- render ---------- */
   return (
     <main
-      className={`assistant chat-shell right-side ${
-        sidebarCollapsed ? "collapsed" : ""
-      }`}
+      className={`assistant-screen ${sidebarOpen ? "" : "is-collapsed"}`}
+      data-theme={theme}
     >
-      {/* Sidebar izquierda (Historial) */}
-      <aside className="sidebar">
-        <button
-          className={`side-toggle ${sidebarCollapsed ? "collapsed" : ""}`}
-          onClick={() => setSidebarCollapsed((v) => !v)}
-          aria-label="Alternar panel"
+      {/* Appbar */}
+      <div className="asst-appbar">
+        <div
+          className="asst-appbar-left"
+          style={{ display: "flex", gap: 12, alignItems: "center" }}
         >
-          {sidebarCollapsed ? "◂" : "▸"}
-        </button>
-        <div className="panel">
-          <div className="side-title">Historial</div>
-          <div className="side-actions">
-            <button className="btn-primary" onClick={newThread}>
-              Nuevo chat
-            </button>
-          </div>
-
-          <div className="thread-list">
-            {threads.map((t) => (
-              <div
-                key={t.id}
-                className={`thread-item ${
-                  t.id === currentThreadId ? "active" : ""
-                }`}
-                onClick={() => selectThread(t.id)}
-                title={`${new Date(t.createdAt).toLocaleString()} · ${
-                  t.messages?.length || 0
-                } msgs`}
-              >
-                <div className="thread-title">{t.title || "Sin título"}</div>
-                <div className="thread-kebab">
-                  <button
-                    className="mini"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      exportThread(t.id);
-                    }}
-                  >
-                    ⭳
-                  </button>
-                  <button
-                    className="mini danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteThread(t.id);
-                    }}
-                  >
-                    🗑
-                  </button>
-                </div>
-              </div>
-            ))}
-            {threads.length === 0 && (
-              <div className="muted">No hay conversaciones.</div>
-            )}
-          </div>
-        </div>
-
-        {kbPanel}
-      </aside>
-
-      {/* Columna central: Chat */}
-      <section className="chat-main">
-        {/* Header “pestañas” estilo ChatGPT/Gemini */}
-        <header className="chat-header">
-          <div className="chat-tabs">
-            <button className="tab active">Chat</button>
-            <button className="tab" onClick={openWizard}>
-              Wizard
-            </button>
-            <button className="tab" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </button>
-          </div>
-        </header>
-
-        {/* Mensajes */}
-        <div ref={boxRef} className="messages">
-          {messages.map((m) => (
-            <ChatMessage key={m.id} m={m} />
-          ))}
-          {loading && (
-            <div className="msg-row left">
-              <div className="avatar" />
-              <div className="bubble assistant">
-                <div className="bubble-meta">
-                  <span className="who">
-                    Asistente • {formatTime(Date.now())}
-                  </span>
-                </div>
-                <div className="bubble-text muted">Pensando…</div>
-              </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        {errMsg && <div className="assistant-error">{errMsg}</div>}
-
-        {/* Composer anclado abajo */}
-        <div className="composer">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
+          <button
+            className="asst-appbar-icon"
+            onClick={() => setSidebarOpen((v) => !v)}
+            title={sidebarOpen ? "Ocultar panel" : "Mostrar panel"}
+            style={{
+              border: 0,
+              borderRadius: 12,
+              background: "rgba(255,255,255,.12)",
+              color: "#fff",
+              padding: "8px 12px",
+              cursor: "pointer",
+              fontWeight: 800,
             }}
-            placeholder="Escribe tu mensaje…"
-            rows={1}
-          />
-          <button className="send-btn" onClick={handleSend} disabled={loading}>
-            {loading ? "Enviando…" : "Enviar"}
+          >
+            ☰
           </button>
+          <div className="asst-appbar-title">📁 Asistente de Proyectos</div>
         </div>
-      </section>
+
+        <div
+          className="asst-appbar-actions"
+          style={{ display: "flex", gap: 8 }}
+        >
+          <button
+            className="asst-appbar-btn"
+            onClick={() =>
+              token
+                ? navigate("/wizard")
+                : navigate("/login", {
+                    state: { from: { pathname: "/Wizard" } },
+                  })
+            }
+          >
+            Wizard
+          </button>
+          <button
+            className="asst-appbar-btn"
+            onClick={() =>
+              token
+                ? navigate("/dashboard")
+                : navigate("/login", {
+                    state: { from: { pathname: "/DashBoard" } },
+                  })
+            }
+          >
+            Dashboard
+          </button>
+          <button
+            className="asst-appbar-btn"
+            onClick={() => setTheme(theme === "ink" ? "plum" : "ink")}
+          >
+            {theme === "ink" ? "🌸 Plum" : "🩵 Ink"}
+          </button>
+          <AuthButton logoutRedirectTo="/login" />
+        </div>
+      </div>
+
+      {/* Layout: sidebar + chat */}
+      <div className="asst-wrap">
+        {/* Sidebar */}
+        <aside className="asst-side">
+          <div className="asst-card">
+            <div className="asst-side-title">Acciones</div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <button className="asst-btn primary" onClick={newThread}>
+                + Nuevo chat
+              </button>
+              <button
+                className="asst-btn"
+                onClick={() => alert("Exporta historial aquí")}
+              >
+                Exportar
+              </button>
+            </div>
+
+            <div className="asst-side-title" style={{ marginTop: 6 }}>
+              Historial
+            </div>
+            <div className="asst-thread-list">
+              {threads.map((t) => {
+                const active = t.id === currentId;
+                const editing = editingId === t.id;
+                return (
+                  <div
+                    key={t.id}
+                    className={`asst-thread ${active ? "active" : ""}`}
+                    onMouseLeave={() =>
+                      setMenuOpenId((id) => (id === t.id ? null : id))
+                    }
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      padding: 10,
+                      borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,.08)",
+                      background: "rgba(255,255,255,.05)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div
+                      className="asst-thread-main"
+                      onClick={() => selectThread(t.id)}
+                      style={{ minWidth: 0, cursor: "pointer" }}
+                    >
+                      {editing ? (
+                        <input
+                          autoFocus
+                          className="asst-thread-edit"
+                          defaultValue={t.title}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              renameThread(t.id, e.currentTarget.value);
+                              setEditingId(null);
+                            }
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          onBlur={(e) => {
+                            renameThread(t.id, e.currentTarget.value);
+                            setEditingId(null);
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "8px 10px",
+                            borderRadius: 10,
+                            border: "1px solid rgba(255,255,255,.18)",
+                            background: "#111318",
+                            color: "#eaeaea",
+                          }}
+                        />
+                      ) : (
+                        <>
+                          <div
+                            className="asst-thread-title"
+                            title={t.title}
+                            style={{
+                              fontWeight: 700,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {t.title || "Sin título"}
+                          </div>
+                          <div
+                            className="asst-thread-sub"
+                            style={{ fontSize: 12, opacity: 0.7 }}
+                          >
+                            {new Date(t.createdAt).toLocaleDateString()} ·{" "}
+                            {t.messages?.length || 0} msgs
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Kebab */}
+                    <div
+                      className="asst-thread-kebab"
+                      style={{ position: "relative" }}
+                    >
+                      <button
+                        className="asst-kebab-btn"
+                        onMouseEnter={() => setMenuOpenId(t.id)}
+                        onClick={() =>
+                          setMenuOpenId((id) => (id === t.id ? null : t.id))
+                        }
+                        aria-label="Opciones"
+                        title="Opciones"
+                        style={{
+                          border: "1px solid rgba(255,255,255,.18)",
+                          background: "transparent",
+                          color: "#e5e7eb",
+                          borderRadius: 8,
+                          padding: "2px 6px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        ⋯
+                      </button>
+
+                      {menuOpenId === t.id && (
+                        <div
+                          className="asst-kebab-menu"
+                          style={{
+                            position: "absolute",
+                            right: 0,
+                            top: "110%",
+                            background: "#15151a",
+                            border: "1px solid rgba(255,255,255,.12)",
+                            borderRadius: 10,
+                            padding: 8,
+                            display: "grid",
+                            gap: 6,
+                            zIndex: 5,
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              setEditingId(t.id);
+                              setMenuOpenId(null);
+                            }}
+                            style={{
+                              border: 0,
+                              background: "transparent",
+                              color: "#eaeaea",
+                              textAlign: "left",
+                              padding: "6px 8px",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Renombrar
+                          </button>
+                          <button
+                            className="danger"
+                            onClick={() => deleteThread(t.id)}
+                            style={{
+                              border: 0,
+                              background: "transparent",
+                              color: "#ef4444",
+                              textAlign: "left",
+                              padding: "6px 8px",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="asst-side-title" style={{ marginTop: 12 }}>
+              Contexto
+            </div>
+            <label className="asst-label">Marco</label>
+            <select className="asst-select" defaultValue="PMBOK®">
+              <option>PMBOK®</option>
+              <option>ISO 21502</option>
+              <option>Scrum</option>
+            </select>
+
+            <label className="asst-label">Industria</label>
+            <input className="asst-input" placeholder="Salud, Retail, Banca…" />
+          </div>
+        </aside>
+
+        {/* Chat */}
+        <section className="asst-chat">
+          {!hasUserMsgs ? (
+            <EmptyHero value={input} setValue={setInput} onSend={handleSend} />
+          ) : (
+            <>
+              <div className="assistant-chat">
+                {messages.map((m) => {
+                  const isUser = m.role === "user";
+                  const meta = `${isUser ? "Tú" : "Asistente"} • ${new Date(
+                    m.ts
+                  ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}`;
+                  return (
+                    <div
+                      key={m.id}
+                      className={`asst-row ${isUser ? "me" : "ai"}`}
+                    >
+                      {!isUser && <div className="asst-avatar" aria-hidden />}
+                      <div className={`asst-block ${isUser ? "me" : "ai"}`}>
+                        <div className="asst-meta">{meta}</div>
+                        <div className="asst-content">{m.text}</div>
+                      </div>
+                      {isUser && <div className="asst-avatar me" aria-hidden />}
+                    </div>
+                  );
+                })}
+                {loading && (
+                  <div className="asst-row ai">
+                    <div className="asst-avatar" aria-hidden />
+                    <div className="asst-block ai">
+                      <div className="asst-meta">Asistente • …</div>
+                      <div className="asst-content">Pensando…</div>
+                    </div>
+                  </div>
+                )}
+                <div ref={endRef} />
+              </div>
+
+              {errMsg && <div className="asst-error">{errMsg}</div>}
+
+              <div className="asst-composer">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Escribe tu mensaje…"
+                  rows={2}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <button onClick={handleSend} disabled={loading}>
+                  {loading ? "Enviando…" : "Enviar"}
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

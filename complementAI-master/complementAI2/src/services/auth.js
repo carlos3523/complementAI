@@ -1,26 +1,33 @@
-const KEY = "auth_demo_user";
+// src/services/auth.js
+import { api } from "./api";
 
-export function isAuthed() {
-  return !!localStorage.getItem(KEY);
+// Registro con email/password
+export function register({ firstName, lastName, email, password }) {
+  return api.post("/auth/register", { firstName, lastName, email, password });
 }
 
-export function getUser() {
-  const raw = localStorage.getItem(KEY);
-  return raw ? JSON.parse(raw) : null;
+// Login con email/password
+export function login(email, password) {
+  return api.post("/auth/login", { email, password });
 }
 
-export async function login(email, password) {
-  // Simula llamada a API
-  await new Promise((r) => setTimeout(r, 400));
-
-  if (!email.includes("@") || password.length < 4) {
-    throw new Error("Credenciales inválidas");
-  }
-  const user = { email, name: email.split("@")[0] };
-  localStorage.setItem(KEY, JSON.stringify(user));
-  return user;
+// Login con Google (auto-registro si no existe)
+// Pásale el ID token recibido desde Google One Tap / botón (credential)
+export function googleSignIn(credential) {
+  return api.post("/auth/google", { credential });
 }
 
+// Datos del usuario autenticado
+export function getMe() {
+  return api.get("/user/me");
+}
+
+// Actualizar tema
+export function updateTheme(theme) {
+  return api.patch("/user/theme", { theme });
+}
+
+// Helper opcional
 export function logout() {
-  localStorage.removeItem(KEY);
+  localStorage.removeItem("token");
 }

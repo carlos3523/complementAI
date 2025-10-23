@@ -1,16 +1,14 @@
+// src/pages/Wizard.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { projectsApi } from "../services/projects";
 
-/* ---------- util ---------- */
-const newId = () =>
-  (crypto?.randomUUID && crypto.randomUUID()) ||
-  String(Date.now()) + Math.random().toString(36).slice(2);
-
+/* ---------- helpers ---------- */
 function mapStandardToMethodology(std) {
-  // valores que pueden venir del Assistant
   if (!std) return "agil";
   const s = std.toLowerCase();
-  if (s.includes("scrum") || s.includes("ágil") || s === "agil") return "agil";
+  if (s.includes("scrum") || s.includes("ágil") || s.includes("agil"))
+    return "agil";
   if (s.includes("iso")) return "iso21502";
   return "pmbok";
 }
@@ -105,7 +103,6 @@ function suggest({ stage, methodology, domain }) {
   if ((domain || "").toLowerCase().includes("software"))
     list = [...software, ...list];
 
-  // dedupe por nombre
   const seen = new Set();
   return list.filter((t) => (seen.has(t.name) ? false : seen.add(t.name)));
 }
@@ -115,15 +112,41 @@ export default function Wizard() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
 
-  // formulario
+  // ¿modo edición?
+  const editingId = search.get("id");
+
+  // formulario (valores normalizados en lowercase)
   const [form, setForm] = useState({
-    name: "",
-    methodology: "agil", // agil | pmbok | iso21502
-    stage: "idea", // idea | planificacion | ejecucion | cierre
-    domain: "software", // libre; usamos opciones comunes
+    name: "Mi proyecto",
+    methodology: "pmbok",
+    stage: "planificacion",
+    domain: "software",
+    templates: [],
   });
 
-  // prellenar desde /wizard?standard=...&phase=...&domain=...
+  const [loading, setLoading] = useState(false);
+
+  // si estás editando, precarga el proyecto
+  useEffect(() => {
+    if (!editingId) return;
+    projectsApi
+      .list()
+      .then((all) => {
+        const p = all.find((x) => String(x.id) === String(editingId));
+        if (p) {
+          setForm({
+            name: p.name || "Mi proyecto",
+            methodology: (p.methodology || "pmbok").toLowerCase(),
+            stage: (p.stage || "planificacion").toLowerCase(),
+            domain: (p.domain || "software").toLowerCase(),
+            templates: p.templates || [],
+          });
+        }
+      })
+      .catch((e) => alert(e.message));
+  }, [editingId]);
+
+  // prellenar desde Assistant (?standard=&phase=&domain=)
   useEffect(() => {
     const std = search.get("standard");
     const ph = search.get("phase");
@@ -132,26 +155,36 @@ export default function Wizard() {
       ...f,
       methodology: mapStandardToMethodology(std) || f.methodology,
       stage: mapPhaseToStage(ph) || f.stage,
-      domain: dom || f.domain,
+      domain: (dom || f.domain || "").toLowerCase() || "software",
     }));
   }, [search]);
 
   // sugerencias dinámicas
   const templates = useMemo(() => suggest(form), [form]);
 
-  function handleSave() {
-    const projects = JSON.parse(localStorage.getItem("projects") || "[]");
-    const project = {
-      id: newId(),
-      name: form.name || `Proyecto ${new Date().toLocaleDateString()}`,
-      methodology: form.methodology,
-      stage: form.stage,
-      domain: form.domain,
-      templates: templates.map((t) => ({ name: t.name, why: t.why })),
-      createdAt: Date.now(),
-    };
-    localStorage.setItem("projects", JSON.stringify([project, ...projects]));
-    navigate("/dashboard");
+  async function handleSave() {
+    try {
+      // Garantiza que siempre mandamos un array JSONB válido
+      const payload = {
+        name:
+          (form.name || "").trim() ||
+          `Proyecto ${new Date().toLocaleDateString()}`,
+        methodology: form.methodology || "pmbok",
+        stage: form.stage || "idea",
+        domain: form.domain || "software",
+        templates: (templates || []).map((t) => ({ name: t.name, why: t.why })), // <- array de objetos
+      };
+
+      // Guarda en BD
+      const created = await projectsApi.create(payload);
+
+      // Redirige a Progreso del proyecto recién creado
+      // Si prefieres ir al dashboard, cambia a navigate("/dashboard");
+      navigate(`/progreso/${created.id}`);
+    } catch (err) {
+      console.error("WIZARD SAVE ERROR:", err);
+      alert(err.message || "No se pudo guardar el proyecto.");
+    }
   }
 
   return (
@@ -159,7 +192,9 @@ export default function Wizard() {
       <div className="wrap">
         {/* Panel izquierdo: formulario */}
         <aside className="panel">
-          <div className="side-title">Nuevo proyecto</div>
+          <div className="side-title">
+            {editingId ? "Editar proyecto" : "Nuevo proyecto"}
+          </div>
           <p className="side-help">
             Completa el contexto y revisa las plantillas sugeridas.
           </p>
@@ -225,8 +260,16 @@ export default function Wizard() {
             <Link to="/assistant" className="btn-ghost">
               ← Volver al Asistente
             </Link>
-            <button className="btn-primary" onClick={handleSave}>
-              Guardar proyecto
+            <button
+              className="btn-primary"
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading
+                ? "Guardando…"
+                : editingId
+                ? "Guardar cambios"
+                : "Guardar proyecto"}
             </button>
           </div>
         </aside>

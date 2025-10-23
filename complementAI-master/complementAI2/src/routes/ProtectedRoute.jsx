@@ -1,11 +1,21 @@
-import { Navigate, useLocation } from "react-router-dom";
+// src/routes/ProtectedRoute.jsx
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-export default function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+export default function ProtectedRoute() {
+  // Ajusta estos nombres a lo que exponga tu AuthContext
+  const { user, token, loading } = useAuth();
+
   const location = useLocation();
-  if (!user) {
-    return <Navigate to="/login/" replace state={{ from: location }} />;
+
+  // Mientras carga el estado de auth (si lo manejas)
+  if (loading) return null; // o un spinner
+
+  // Si no hay sesión, redirige al login y recuerda desde dónde venía
+  if (!token && !user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
-  return children;
+
+  // Si está autenticado, renderiza las rutas hijas
+  return <Outlet />;
 }

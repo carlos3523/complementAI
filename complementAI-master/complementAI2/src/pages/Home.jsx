@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Layout from "../components/Layout"; 
+import { useAuth } from "../contexts/AuthContext"; // 👈 importar el contexto
+import Layout from "../components/Layout";
 import "../style.css";
 
-export default function Home({ isAuthed = false }) {
+export default function Home() {
   const navigate = useNavigate();
+  const { token } = useAuth(); // sabremos si el usuario está logueado
+
   const images = useMemo(
     () => [
       "https://images.unsplash.com/photo-1529336953121-a0ce23b1fd1e?auto=format&fit=crop&w=1600&q=80",
@@ -41,11 +44,23 @@ export default function Home({ isAuthed = false }) {
               <button
                 className="btn-primary"
                 onClick={() =>
-                  isAuthed ? navigate("/wizard") : navigate("/login")
+                  token ? navigate("/wizard") : navigate("/login")
                 }
               >
                 Crear Proyecto
               </button>
+
+              {/* 👇 solo mostrar Asistente si ya está logueado */}
+              {token && (
+                <button
+                  className="btn-secondary"
+                  onClick={() => navigate("/Assistant")}
+                  style={{ marginLeft: "10px" }}
+                >
+                  Ir al Asistente
+                </button>
+              )}
+
               <a className="link" href="#features">
                 Ver cómo funciona
               </a>
@@ -66,11 +81,16 @@ export default function Home({ isAuthed = false }) {
           <div className="cards">
             <div className="card">
               <h3>Motor de Plantillas</h3>
-              <p>Lógica interna que sugiere la plantilla exacta según la etapa.</p>
+              <p>
+                Lógica interna que sugiere la plantilla exacta según la etapa.
+              </p>
             </div>
             <div className="card">
               <h3>Asistente IA</h3>
-              <p>Explica y justifica cada documento con respaldo en buenas prácticas.</p>
+              <p>
+                Explica y justifica cada documento con respaldo en buenas
+                prácticas.
+              </p>
             </div>
             <div className="card">
               <h3>Trazabilidad</h3>
