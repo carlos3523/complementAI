@@ -34,6 +34,7 @@ const seedThread = () => ({
 function EmptyHero({ value, setValue, onSend }) {
   const { language } = useLanguage();
   const t = translations[language];
+  
 
   return (
     <div className="hero-shell">
@@ -53,9 +54,33 @@ function EmptyHero({ value, setValue, onSend }) {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               onSend();
+              return;
+            }
+
+            // Tab y Shift+Tab
+            if (e.key === "Tab") {
+              e.preventDefault();
+              const { selectionStart, selectionEnd, value } = e.target;
+              const before = value.substring(0, selectionStart);
+              const after = value.substring(selectionEnd);
+
+              if (e.shiftKey) {
+                if (before.endsWith("  ")) {
+                  e.target.value = before.slice(0, -2) + after;
+                  e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
+                }
+              } else {
+                e.target.value = before + "  " + after;
+                e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
+              }
+
+              // Mantener sincronizado el estado
+              const event = new Event("input", { bubbles: true });
+              e.target.dispatchEvent(event);
             }
           }}
         />
+
         <div className="hero-actions">
           <button className="hero-icon" title={t.attach}>
             📎
@@ -513,9 +538,32 @@ export default function AssistantPage() {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSend();
+                      return;
+                    }
+
+                    // Tab y Shift+Tab
+                    if (e.key === "Tab") {
+                      e.preventDefault();
+                      const { selectionStart, selectionEnd, value } = e.target;
+                      const before = value.substring(0, selectionStart);
+                      const after = value.substring(selectionEnd);
+
+                      if (e.shiftKey) {
+                        if (before.endsWith("  ")) {
+                          e.target.value = before.slice(0, -2) + after;
+                          e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
+                        }
+                      } else {
+                        e.target.value = before + "  " + after;
+                        e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
+                      }
+
+                      const event = new Event("input", { bubbles: true });
+                      e.target.dispatchEvent(event);
                     }
                   }}
                 />
+
                 <div
                   style={{
                     display: "flex",
