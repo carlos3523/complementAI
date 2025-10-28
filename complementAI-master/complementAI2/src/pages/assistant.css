@@ -575,3 +575,35 @@
 .save-btn:hover {
   background-color: #a855f7;
 }
+
+/* Estilo por defecto (medium) */
+.assistant-chat .asst-content {
+    font-size: 14px; /* O el tamaño que consideres 'medium' */
+}
+.asst-composer textarea {
+    font-size: 14px; /* O el tamaño que consideres 'medium' */
+}
+
+/* Estilo para fuente pequeña */
+[data-font-size="small"] .assistant-chat .asst-content {
+    font-size: 12px;
+}
+[data-font-size="small"] .asst-composer textarea {
+    font-size: 12px;
+}
+
+/* Estilo para fuente grande */
+[data-font-size="large"] .assistant-chat .asst-content {
+    font-size: 16px;
+}
+[data-font-size="large"] .asst-composer textarea {
+    font-size: 16px;
+}
+
+/* Asegúrate de aplicar también a EmptyHero */
+.hero-shell .hero-composer[data-font-size="small"] .hero-input {
+    font-size: 12px;
+}
+.hero-shell .hero-composer[data-font-size="large"] .hero-input {
+    font-size: 16px;
+}

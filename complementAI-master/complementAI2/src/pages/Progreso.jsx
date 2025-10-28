@@ -73,36 +73,25 @@ export default function Progreso() {
         };
     });
 
-      useEffect(() => {
-        const syncProgress = () => {
-          const savedSession = JSON.parse(localStorage.getItem("assistant_session") || "null");
-          const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
+    // sincroniza si el usuario vuelve desde Assistant
+    useEffect(() => {
+        const onFocus = () => {
+            const savedSession = JSON.parse(localStorage.getItem("assistant_session") || "null");
+            const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
 
-          const newLang = savedPrefs.language || "es";
-          setLanguage(newLang);
+            // Sincronizar idioma
+            const newLang = savedPrefs.language || "es";
+            setLanguage(newLang);
 
-          if (savedSession) {
-            setCtx({
-              standard: savedSession.standard || "pmbok",
-              phase: savedSession.phase || KB.pmbok.phases[0],
-              industry: savedSession.industry || "",
+            if (savedSession) setCtx({
+                standard: savedSession.standard || "pmbok",
+                phase: savedSession.phase || KB.pmbok.phases[0],
+                industry: savedSession.industry || "",
             });
-          }
         };
-
-        // 🔄 Actualiza al enfocar o guardar
-        window.addEventListener("focus", syncProgress);
-        window.addEventListener("projectSaved", syncProgress);
-
-        // 🔁 Ejecuta al cargar
-        syncProgress();
-
-        return () => {
-          window.removeEventListener("focus", syncProgress);
-          window.removeEventListener("projectSaved", syncProgress);
-        };
-      }, []);
-
+        window.addEventListener("focus", onFocus);
+        return () => window.removeEventListener("focus", onFocus);
+    }, []);
 
     const kb = KB[ctx.standard];
 
@@ -236,3 +225,5 @@ export default function Progreso() {
         </main>
     );
 }
+
+// Nota: Elimina la constante 'styles' de aquí.

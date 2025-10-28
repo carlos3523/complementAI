@@ -9,10 +9,24 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { translations } from "../i18n/translations";
 
 /* ===============================
-   Persistencia (localStorage)
-   =============================== */
+    Persistencia (localStorage)
+    =============================== */
 const LS_THREADS = "asst_threads_v1";
 const now = () => Date.now();
+
+// --- Función auxiliar (copiada de AuthButton para cargar preferencias)
+function loadAssistantPrefs() {
+  const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
+  return {
+    assistantStyle: savedPrefs.style || "detallado",
+    showEmojis: savedPrefs.emojis ?? true,
+    showTimestamps: savedPrefs.timestamps ?? true,
+    autoScroll: savedPrefs.autoscroll ?? true, // 👈 Carga la preferencia de auto-scroll
+    language: savedPrefs.language || "es",
+    fontSize: savedPrefs.fontSize || "medium",
+  };
+}
+// ---
 
 const seedThread = () => ({
   id: String(now()),
@@ -29,9 +43,9 @@ const seedThread = () => ({
 });
 
 /* ===============================
-   HERO (landing)
-   =============================== */
-function EmptyHero({ value, setValue, onSend }) {
+    HERO (landing)
+    =============================== */
+function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
   const { language } = useLanguage();
   const t = translations[language];
   
@@ -43,7 +57,7 @@ function EmptyHero({ value, setValue, onSend }) {
       </div>
       <h1 className="hero-title">{t.heroTitle}</h1>
 
-      <div className="hero-composer">
+      <div className="hero-composer" data-font-size={fontSizeClass}>
         <textarea
           className="hero-input"
           rows={2}
@@ -65,12 +79,12 @@ function EmptyHero({ value, setValue, onSend }) {
               const after = value.substring(selectionEnd);
 
               if (e.shiftKey) {
-                if (before.endsWith("  ")) {
+                if (before.endsWith("  ")) {
                   e.target.value = before.slice(0, -2) + after;
                   e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
                 }
               } else {
-                e.target.value = before + "  " + after;
+                e.target.value = before + "  " + after;
                 e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
               }
 
@@ -95,8 +109,8 @@ function EmptyHero({ value, setValue, onSend }) {
 }
 
 /* ===============================
-   Página principal
-   =============================== */
+    Página principal
+    =============================== */
 export default function AssistantPage() {
   const { user, token } = useAuth();
   const { language } = useLanguage();
@@ -123,15 +137,33 @@ export default function AssistantPage() {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
+  const [fontSize, setFontSize] = useState("medium");
+  const [showTimestamps, setShowTimestamps] = useState(true); 
+  const [autoScroll, setAutoScroll] = useState(true); // 👈 NUEVO ESTADO para auto-scroll
+
   const current = threads.find((t) => t.id === currentId) || threads[0];
   const [messages, setMessages] = useState(current.messages);
   const endRef = useRef(null);
 
   const hasUserMsgs = messages.some((m) => m.role === "user");
 
+  // FUNCIÓN PARA ACTUALIZAR CONFIGURACIÓN DESDE AUTHBUTTON
+  function refreshConfig() {
+    const prefs = loadAssistantPrefs();
+    setFontSize(prefs.fontSize);
+    setShowTimestamps(prefs.showTimestamps);
+    setAutoScroll(prefs.autoScroll); // 👈 Actualiza el estado de auto-scroll
+  }
+
+  // Cargar configuración inicial
+  useEffect(() => {
+    refreshConfig();
+  }, []);
+
+
   /* ===============================
-     VOZ: Lectura y reconocimiento
-     =============================== */
+      VOZ: Lectura y reconocimiento
+      =============================== */
   const [speaking, setSpeaking] = useState(false);
   const synthRef = useRef(window.speechSynthesis);
 
@@ -188,8 +220,8 @@ export default function AssistantPage() {
   }, [messages]);
 
   /* ===============================
-     Persistencia e interacciones
-     =============================== */
+      Persistencia e interacciones
+      =============================== */
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     setThreads(saved.length ? saved : [seedThread()]);
@@ -209,9 +241,12 @@ export default function AssistantPage() {
     );
   }, [messages, currentId]);
 
+  // 👈 USO CONDICIONAL DEL AUTO-SCROLL
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, loading]);
+    if (autoScroll) {
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages, loading, autoScroll]); // Depende de messages, loading y autoScroll
 
   function smartTitleFrom(text) {
     const oneLine = text.replace(/\s+/g, " ").trim();
@@ -230,8 +265,15 @@ export default function AssistantPage() {
     setLoading(true);
 
     try {
+      // Usar el historial de conversación para dar contexto
+      const conversationHistory = current.messages.map((m) => ({
+        role: m.role,
+        content: m.text,
+      }));
+
       const responseText = await chat([
         { role: "system", content: "You are ComplementAI, a project assistant." },
+        ...conversationHistory.slice(1), 
         { role: "user", content: text },
       ]);
       const aiMsg = {
@@ -299,12 +341,13 @@ export default function AssistantPage() {
   }
 
   /* ===============================
-     Render principal
-     =============================== */
+      Render principal
+      =============================== */
   return (
     <main
       className={`assistant-screen ${sidebarOpen ? "" : "is-collapsed"}`}
       data-theme={theme}
+      data-font-size={fontSize} 
     >
       {/* Appbar */}
       <div className="asst-appbar">
@@ -346,7 +389,7 @@ export default function AssistantPage() {
           >
             {theme === "ink" ? "🌸 Plum" : "🩵 Ink"}
           </button>
-          <AuthButton logoutRedirectTo="/login" />
+          <AuthButton logoutRedirectTo="/login" refreshConfig={refreshConfig} />
         </div>
       </div>
 
@@ -487,18 +530,26 @@ export default function AssistantPage() {
         {/* Chat */}
         <section className="asst-chat">
           {!hasUserMsgs ? (
-            <EmptyHero value={input} setValue={setInput} onSend={handleSend} />
+            <EmptyHero value={input} setValue={setInput} onSend={handleSend} fontSizeClass={fontSize} />
           ) : (
             <>
-              <div className="assistant-chat">
+              <div className="assistant-chat" data-font-size={fontSize}>
                 {messages.map((m) => {
                   const isUser = m.role === "user";
-                  const meta = `${isUser ? "Tú" : t.projectAssistant} • ${new Date(
-                    m.ts
-                  ).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}`;
+                  
+                  // Lógica para incluir/excluir marca de tiempo
+                  const timeString = showTimestamps
+                    ? new Date(m.ts).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "";
+                  
+                  // Crear la metadata condicionalmente
+                  const meta = `${isUser ? "Tú" : t.projectAssistant}${
+                    showTimestamps ? ` • ${timeString}` : ""
+                  }`;
+
                   return (
                     <div
                       key={m.id}
@@ -506,7 +557,7 @@ export default function AssistantPage() {
                     >
                       {!isUser && <div className="asst-avatar" />}
                       <div className={`asst-block ${isUser ? "me" : "ai"}`}>
-                        <div className="asst-meta">{meta}</div>
+                        <div className="asst-meta">{meta}</div> 
                         <div className="asst-content">{m.text}</div>
                       </div>
                       {isUser && <div className="asst-avatar me" />}
@@ -528,7 +579,7 @@ export default function AssistantPage() {
               {errMsg && <div className="asst-error">{errMsg}</div>}
 
               {/* 🎤 Compositor con voz */}
-              <div className="asst-composer">
+              <div className="asst-composer" data-font-size={fontSize}>
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -546,15 +597,15 @@ export default function AssistantPage() {
                       e.preventDefault();
                       const { selectionStart, selectionEnd, value } = e.target;
                       const before = value.substring(0, selectionStart);
-                      const after = value.substring(selectionEnd);
+                      const after = value.substring(end);
 
                       if (e.shiftKey) {
-                        if (before.endsWith("  ")) {
+                        if (before.endsWith("  ")) {
                           e.target.value = before.slice(0, -2) + after;
                           e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
                         }
                       } else {
-                        e.target.value = before + "  " + after;
+                        e.target.value = before + "  " + after;
                         e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
                       }
 
