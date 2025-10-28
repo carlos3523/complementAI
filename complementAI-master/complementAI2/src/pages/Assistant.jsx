@@ -104,6 +104,67 @@ export default function AssistantPage() {
 
   const hasUserMsgs = messages.some((m) => m.role === "user");
 
+  /* ===============================
+     VOZ: Lectura y reconocimiento
+     =============================== */
+  const [speaking, setSpeaking] = useState(false);
+  const synthRef = useRef(window.speechSynthesis);
+
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    if ("webkitSpeechRecognition" in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = language === "es" ? "es-ES" : "en-US";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+      };
+
+      recognition.onend = () => setListening(false);
+      recognitionRef.current = recognition;
+    }
+  }, [language]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Tu navegador no soporta reconocimiento de voz 😢");
+      return;
+    }
+    if (listening) {
+      recognitionRef.current.stop();
+      setListening(false);
+    } else {
+      recognitionRef.current.start();
+      setListening(true);
+    }
+  };
+
+  const speak = (text) => {
+    if (!window.speechSynthesis) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = language === "es" ? "es-ES" : "en-US";
+    utter.rate = 1;
+    utter.pitch = 1;
+    setSpeaking(true);
+    utter.onend = () => setSpeaking(false);
+    synthRef.current.cancel();
+    synthRef.current.speak(utter);
+  };
+
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg?.role === "assistant") speak(lastMsg.text);
+  }, [messages]);
+
+  /* ===============================
+     Persistencia e interacciones
+     =============================== */
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     setThreads(saved.length ? saved : [seedThread()]);
@@ -212,6 +273,9 @@ export default function AssistantPage() {
     );
   }
 
+  /* ===============================
+     Render principal
+     =============================== */
   return (
     <main
       className={`assistant-screen ${sidebarOpen ? "" : "is-collapsed"}`}
@@ -438,6 +502,7 @@ export default function AssistantPage() {
 
               {errMsg && <div className="asst-error">{errMsg}</div>}
 
+              {/* 🎤 Compositor con voz */}
               <div className="asst-composer">
                 <textarea
                   value={input}
@@ -451,9 +516,27 @@ export default function AssistantPage() {
                     }
                   }}
                 />
-                <button onClick={handleSend} disabled={loading}>
-                  {loading ? t.sending : t.send}
-                </button>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    alignItems: "center",
+                  }}
+                >
+                  <button onClick={toggleListening} title="Hablar">
+                    {listening ? "🎙️ Grabando..." : "🎤"}
+                  </button>
+                  <button
+                    onClick={() => synthRef.current.cancel()}
+                    disabled={!speaking}
+                    title="Detener voz"
+                  >
+                    🔇
+                  </button>
+                  <button onClick={handleSend} disabled={loading}>
+                    {loading ? t.sending : t.send}
+                  </button>
+                </div>
               </div>
             </>
           )}
