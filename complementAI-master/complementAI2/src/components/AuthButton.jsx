@@ -1,9 +1,44 @@
-// src/components/AuthButton.jsx
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import { translations } from "../i18n/translations";
 
-// Cargar las preferencias del asistente desde localStorage
+// === COMPONENTE PARA CAMBIAR TEMA ===
+function ThemeToggle() {
+  const [light, setLight] = useState(() => {
+    return localStorage.getItem("theme") === "light";
+  });
+
+  useEffect(() => {
+    if (light) {
+      document.documentElement.classList.add("light");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.remove("light");
+      localStorage.setItem("theme", "dark");
+    }
+  }, [light]);
+
+  return (
+    <button
+      onClick={() => setLight(!light)}
+      style={{
+        border: "1px solid rgba(255,255,255,.2)",
+        borderRadius: 8,
+        padding: "8px 10px",
+        background: "transparent",
+        color: "#e5e7eb",
+        cursor: "pointer",
+        fontSize: 14,
+      }}
+    >
+      {light ? "☀️ Modo claro" : "🌙 Modo oscuro"}
+    </button>
+  );
+}
+
+// === FUNCIONES AUXILIARES ===
 function loadAssistantPrefs() {
   const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
   return {
@@ -16,7 +51,6 @@ function loadAssistantPrefs() {
   };
 }
 
-// Hook para cerrar al hacer click fuera
 function useOutsideClose(ref, onClose) {
   useEffect(() => {
     function onClick(e) {
@@ -27,7 +61,6 @@ function useOutsideClose(ref, onClose) {
   }, [ref, onClose]);
 }
 
-// Función para obtener las iniciales del usuario
 function initialsFrom(user) {
   const a =
     user?.first_name ||
@@ -41,19 +74,15 @@ function initialsFrom(user) {
   return s.toUpperCase() || "U";
 }
 
-// Propósito: Permite pasar una función al padre para que recargue la configuración
-export default function AuthButton({
-  logoutRedirectTo = "/login",
-  refreshConfig, // 👈 Se añade la prop opcional para notificar al padre
-}) {
+// === COMPONENTE PRINCIPAL ===
+export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig }) {
   const { user, token, loading, logout } = useAuth();
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [showConfig, setShowConfig] = useState(false); // 👈 Nuevo estado para el modal
+  const [showConfig, setShowConfig] = useState(false);
   const wrapRef = useRef(null);
 
-  // Estados locales para el modal de configuración (inicializados en useEffect)
   const [assistantStyle, setAssistantStyle] = useState("detallado");
   const [showEmojis, setShowEmojis] = useState(true);
   const [showTimestamps, setShowTimestamps] = useState(true);
@@ -61,7 +90,9 @@ export default function AuthButton({
   const [language, setLanguage] = useState("es");
   const [fontSize, setFontSize] = useState("medium");
 
-  // Hook para cargar las preferencias al inicio
+  const { language: globalLanguage, changeLanguage } = useLanguage();
+  const t = translations[globalLanguage];
+
   useEffect(() => {
     const prefs = loadAssistantPrefs();
     setAssistantStyle(prefs.assistantStyle);
@@ -72,15 +103,10 @@ export default function AuthButton({
     setFontSize(prefs.fontSize);
   }, []);
 
-  // Hook para cerrar el menú al hacer click fuera
   useOutsideClose(wrapRef, () => {
-    if (open && !showConfig) {
-      // Solo cierra el menú si no está abierto el modal de configuración
-      setOpen(false);
-    }
+    if (open && !showConfig) setOpen(false);
   });
 
-  // Función para guardar los cambios de configuración
   const handleSaveConfig = () => {
     const prefs = {
       style: assistantStyle,
@@ -92,23 +118,18 @@ export default function AuthButton({
     };
     localStorage.setItem("assistant_prefs", JSON.stringify(prefs));
 
-    setShowConfig(false); // Cerrar modal
-
-    // Llamar a la función para notificar al componente padre (si existe)
-    if (refreshConfig) {
-      refreshConfig();
-    }
+    changeLanguage(language); // 👈 actualiza el idioma global
+    if (refreshConfig) refreshConfig();
+    setShowConfig(false);
   };
 
   const label = useMemo(() => {
     if (!user) return "";
-    const first =
-      user.first_name || user.firstName || user.full_name || user.email;
+    const first = user.first_name || user.firstName || user.full_name || user.email;
     return String(first).split(" ")[0] || "";
   }, [user]);
 
-  if (loading) {
-    // ... (código de cargando sin cambios)
+  if (loading)
     return (
       <div
         style={{
@@ -122,10 +143,8 @@ export default function AuthButton({
         Cargando…
       </div>
     );
-  }
 
-  if (!token) {
-    // ... (código de botones de login/register sin cambios)
+  if (!token)
     return (
       <div style={{ display: "flex", gap: 8 }}>
         <Link className="asst-appbar-btn" to="/login">
@@ -136,7 +155,6 @@ export default function AuthButton({
         </Link>
       </div>
     );
-  }
 
   const showPicture = user?.picture && !imgError;
 
@@ -158,7 +176,6 @@ export default function AuthButton({
           fontWeight: 600,
         }}
       >
-        {/* Avatar */}
         <div
           aria-hidden
           style={{
@@ -186,15 +203,7 @@ export default function AuthButton({
           )}
         </div>
 
-        {/* Label */}
-        <span
-          style={{
-            maxWidth: 120,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {label}
         </span>
         <span aria-hidden>▾</span>
@@ -228,7 +237,6 @@ export default function AuthButton({
               gap: 8,
             }}
           >
-            {/* mini avatar */}
             <div
               aria-hidden
               style={{
@@ -255,74 +263,23 @@ export default function AuthButton({
                 initialsFrom(user)
               )}
             </div>
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-              {user?.email}
-            </span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{user?.email}</span>
           </div>
 
-          {/* Botón de Mi Cuenta */}
-          <button
-            onClick={() => {
-              setOpen(false);
-              nav("/Assistant"); // cambia por tu ruta de perfil
-            }}
-            style={{
-              border: 0,
-              background: "transparent",
-              color: "#eaeaea",
-              textAlign: "left",
-              padding: "6px 8px",
-              borderRadius: 8,
-              cursor: "pointer",
-              "&:hover": { background: "rgba(255,255,255,.05)" },
-            }}
-          >
-            Mi cuenta
-          </button>
-          
-          {/* ⚙️ NUEVO: Botón de Configuración */}
-          <button
-            onClick={() => {
-              setOpen(false); // Cierra el menú desplegable
-              setShowConfig(true); // Abre el modal de configuración
-            }}
-            style={{
-              border: 0,
-              background: "transparent",
-              color: "#eaeaea",
-              textAlign: "left",
-              padding: "6px 8px",
-              borderRadius: 8,
-              cursor: "pointer",
-              "&:hover": { background: "rgba(255,255,255,.05)" },
-            }}
-          >
-            ⚙️ Configuración Asistente
+          <button onClick={() => { setOpen(false); nav("/Assistant"); }} style={menuButtonStyle}>
+            {t.account}
           </button>
 
-          {/* Botón de Cerrar Sesión */}
-          <button
-            onClick={() => {
-              setOpen(false);
-              logout({ redirectTo: logoutRedirectTo }); // Usa la prop logoutRedirectTo
-            }}
-            style={{
-              border: 0,
-              background: "transparent",
-              color: "#ef4444",
-              textAlign: "left",
-              padding: "6px 8px",
-              borderRadius: 8,
-              cursor: "pointer",
-              "&:hover": { background: "rgba(255,0,0,.05)" },
-            }}
-          >
-            Cerrar sesión
+          <button onClick={() => { setOpen(false); setShowConfig(true); }} style={menuButtonStyle}>
+            ⚙️ {t.settings}
+          </button>
+
+          <button onClick={() => { setOpen(false); logout({ redirectTo: logoutRedirectTo }); }} style={{ ...menuButtonStyle, color: "#ef4444" }}>
+            {t.logout}
           </button>
         </div>
       )}
 
-      {/* ⚙️ NUEVO: Modal de Configuración (estilizado con estilos en línea sencillos) */}
       {showConfig && (
         <div
           style={{
@@ -335,10 +292,10 @@ export default function AuthButton({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 50, // Debe estar por encima de todo
+            zIndex: 50,
             padding: 20,
           }}
-          onClick={() => setShowConfig(false)} // Cerrar al hacer click en el overlay
+          onClick={() => setShowConfig(false)}
         >
           <div
             role="dialog"
@@ -351,115 +308,64 @@ export default function AuthButton({
               maxWidth: 400,
               boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
             }}
-            onClick={(e) => e.stopPropagation()} // Evita que se cierre al hacer click dentro
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderBottom: "1px solid rgba(255,255,255,.1)",
-                paddingBottom: 16,
-                marginBottom: 16,
-              }}
-            >
-              <h3 style={{ margin: 0, color: "#e5e7eb" }}>
-                ⚙️ Preferencias de Asistente
-              </h3>
-              <button
-                onClick={() => setShowConfig(false)}
-                style={{
-                  border: 0,
-                  background: "transparent",
-                  color: "#9ca3af",
-                  fontSize: 18,
-                  cursor: "pointer",
-                }}
-              >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.1)", paddingBottom: 16, marginBottom: 16 }}>
+              <h3 style={{ margin: 0, color: "#e5e7eb" }}>{t.preferencesTitle}</h3>
+              <button onClick={() => setShowConfig(false)} style={{ border: 0, background: "transparent", color: "#9ca3af", fontSize: 18, cursor: "pointer" }}>
                 ✕
               </button>
             </div>
 
-            {/* Cuerpo del Modal */}
             <div style={{ display: "grid", gap: 16 }}>
-              {/* Control Tamaño de Fuente */}
               <div style={{ display: "grid", gap: 4 }}>
-                <label style={labelStyle}>Tamaño de Fuente del Chat:</label>
-                <select
-                  value={fontSize}
-                  onChange={(e) => setFontSize(e.target.value)}
-                  style={selectStyle}
-                >
-                  <option value="small">Pequeño (Compacto) - Aa</option>
-                  <option value="medium">Mediano (Estándar) - Aa</option>
-                  <option value="large">Grande (Accesible) - Aa</option>
+                <label style={labelStyle}>{t.chatFontSize}</label>
+                <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} style={selectStyle}>
+                  <option value="small">Pequeño (Compacto)</option>
+                  <option value="medium">Mediano (Estándar)</option>
+                  <option value="large">Grande (Accesible)</option>
                 </select>
               </div>
 
-              {/* Control Idioma */}
               <div style={{ display: "grid", gap: 4 }}>
-                <label style={labelStyle}>Idioma de la Interfaz:</label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  style={selectStyle}
-                >
+                <label style={labelStyle}>{t.interfaceLanguage}</label>
+                <select value={language} onChange={(e) => setLanguage(e.target.value)} style={selectStyle}>
                   <option value="es">Español 🇪🇸</option>
-                  <option value="en">Inglés 🇬🇧</option>
+                  <option value="en">English 🇬🇧</option>
                 </select>
               </div>
 
-              {/* Control Estilo de Respuesta */}
+              {/* === BOTÓN DE TEMA === */}
               <div style={{ display: "grid", gap: 4 }}>
-                <label style={labelStyle}>Estilo de Respuesta IA:</label>
-                <select
-                  value={assistantStyle}
-                  onChange={(e) => setAssistantStyle(e.target.value)}
-                  style={selectStyle}
-                >
-                  <option value="compacto">Compacto (Pasos cortos)</option>
-                  <option value="detallado">
-                    Detallado (Incluye breves justificaciones)
-                  </option>
+                <label style={labelStyle}>Tema de la interfaz</label>
+                <ThemeToggle />
+              </div>
+
+              <div style={{ display: "grid", gap: 4 }}>
+                <label style={labelStyle}>{t.responseStyle}</label>
+                <select value={assistantStyle} onChange={(e) => setAssistantStyle(e.target.value)} style={selectStyle}>
+                  <option value="compacto">Compacto</option>
+                  <option value="detallado">Detallado</option>
                 </select>
               </div>
 
-              {/* Checkbox Emojis */}
               <label style={checkboxLabelStyle}>
-                <input
-                  type="checkbox"
-                  checked={showEmojis}
-                  onChange={(e) => setShowEmojis(e.target.checked)}
-                  style={checkboxInputStyle}
-                />
-                Mostrar Emojis en respuestas
+                <input type="checkbox" checked={showEmojis} onChange={(e) => setShowEmojis(e.target.checked)} style={checkboxInputStyle} />
+                {t.showEmojis}
               </label>
 
-              {/* Checkbox Marcas de Tiempo */}
               <label style={checkboxLabelStyle}>
-                <input
-                  type="checkbox"
-                  checked={showTimestamps}
-                  onChange={(e) => setShowTimestamps(e.target.checked)}
-                  style={checkboxInputStyle}
-                />
-                Mostrar marcas de tiempo en mensajes
+                <input type="checkbox" checked={showTimestamps} onChange={(e) => setShowTimestamps(e.target.checked)} style={checkboxInputStyle} />
+                {t.showTimestamps}
               </label>
 
-              {/* Checkbox Auto-desplazamiento */}
               <label style={checkboxLabelStyle}>
-                <input
-                  type="checkbox"
-                  checked={autoScroll}
-                  onChange={(e) => setAutoScroll(e.target.checked)}
-                  style={checkboxInputStyle}
-                />
-                Habilitar auto-desplazamiento en el chat
+                <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} style={checkboxInputStyle} />
+                {t.enableAutoscroll}
               </label>
 
-              {/* Botón Guardar */}
               <button onClick={handleSaveConfig} style={saveButtonStyle}>
-                Guardar Cambios
+                {t.saveChanges}
               </button>
             </div>
           </div>
@@ -469,46 +375,37 @@ export default function AuthButton({
   );
 }
 
-// Estilos auxiliares para el modal
-const labelStyle = {
-  color: "#e5e7eb",
-  fontSize: 14,
-  fontWeight: 500,
+// === ESTILOS ===
+const menuButtonStyle = {
+  border: 0,
+  background: "transparent",
+  color: "#eaeaea",
+  textAlign: "left",
+  padding: "6px 8px",
+  borderRadius: 8,
+  cursor: "pointer",
 };
 
+const labelStyle = { color: "#e5e7eb", fontSize: 14, fontWeight: 500 };
 const selectStyle = {
   padding: "8px 10px",
   borderRadius: 8,
   border: "1px solid rgba(255,255,255,.15)",
-  background: "#1f2937", // Fondo más oscuro
+  background: "#1f2937",
   color: "#e5e7eb",
   fontSize: 14,
   cursor: "pointer",
 };
-
-const checkboxLabelStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  color: "#e5e7eb",
-  fontSize: 14,
-  cursor: "pointer",
-};
-
-const checkboxInputStyle = {
-  width: 16,
-  height: 16,
-};
-
+const checkboxLabelStyle = { display: "flex", alignItems: "center", gap: 8, color: "#e5e7eb", fontSize: 14, cursor: "pointer" };
+const checkboxInputStyle = { width: 16, height: 16 };
 const saveButtonStyle = {
   padding: "10px 16px",
   borderRadius: 8,
   border: 0,
-  background: "#3b82f6", // Un azul visible
+  background: "#3b82f6",
   color: "white",
   fontSize: 16,
   fontWeight: 600,
   cursor: "pointer",
   marginTop: 8,
-  "&:hover": { background: "#2563eb" },
 };

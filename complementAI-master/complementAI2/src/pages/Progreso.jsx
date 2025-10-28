@@ -1,414 +1,238 @@
 // src/pages/Progreso.jsx
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { projectsApi } from "../services/projects";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../style.css";
+import AuthButton from "../components/AuthButton"; // Asegúrate de que la ruta sea correcta
+import { translations } from "../i18n/translations"; // Asegúrate de tener este archivo con las claves
 
-/* ============== KB por metodología (solo visual) ============== */
+// === KB compacto (igual estructura que tu Assistant) ===
 const KB = {
-  pmbok: {
-    label: "PMBOK®",
-    phases: [
-      "Inicio",
-      "Planificación",
-      "Ejecución",
-      "Monitoreo y Control",
-      "Cierre",
-    ],
-    mapStage(stage) {
-      const s = (stage || "").toLowerCase();
-      if (s === "idea") return "Inicio";
-      if (s === "planificacion") return "Planificación";
-      if (s === "ejecucion") return "Ejecución";
-      if (s === "cierre") return "Cierre";
-      return "Inicio";
+    // ... (KB permanece igual)
+    pmbok: {
+        label: "PMBOK®",
+        phases: ["Inicio", "Planificación", "Ejecución", "Monitoreo y Control", "Cierre"],
+        artifacts: {
+            Inicio: ["Acta de Constitución", "Identificación de Stakeholders", "Caso de Negocio"],
+            Planificación: ["WBS/EDT", "Cronograma (Gantt)", "Presupuesto", "Plan de Riesgos", "Plan de Calidad", "Comunicaciones"],
+            Ejecución: ["Gestión de Cambios", "Reportes de Avance"],
+            "Monitoreo y Control": ["EVM (PV, EV, AC)", "Seguimiento de Riesgos", "Control de Calidad"],
+            Cierre: ["Informe Final", "Lecciones Aprendidas"],
+        },
     },
-    artifacts: {
-      Inicio: [
-        "Acta de Constitución",
-        "Identificación de Stakeholders",
-        "Caso de Negocio",
-      ],
-      Planificación: [
-        "WBS/EDT",
-        "Cronograma (Gantt)",
-        "Presupuesto",
-        "Plan de Riesgos",
-        "Plan de Calidad",
-        "Comunicaciones",
-      ],
-      Ejecución: ["Gestión de Cambios", "Reportes de Avance"],
-      "Monitoreo y Control": [
-        "EVM (PV, EV, AC)",
-        "Seguimiento de Riesgos",
-        "Control de Calidad",
-      ],
-      Cierre: ["Informe Final", "Lecciones Aprendidas"],
+    iso21502: {
+        label: "ISO 21502",
+        phases: ["Inicio", "Planificación", "Ejecución", "Monitoreo y Control", "Cierre"],
+        artifacts: {
+            Inicio: ["Mandato del Proyecto"],
+            Planificación: ["Plan de Dirección", "Gestión de Beneficios", "Gestión de Interesados"],
+            Ejecución: ["Gestión de Recursos", "Adquisiciones"],
+            "Monitoreo y Control": ["Revisión de Beneficios", "Aseguramiento"],
+            Cierre: ["Transferencia Operacional"],
+        },
     },
-  },
-  iso21502: {
-    label: "ISO 21502",
-    phases: [
-      "Inicio",
-      "Planificación",
-      "Ejecución",
-      "Monitoreo y Control",
-      "Cierre",
-    ],
-    mapStage(stage) {
-      const s = (stage || "").toLowerCase();
-      if (s === "idea") return "Inicio";
-      if (s === "planificacion") return "Planificación";
-      if (s === "ejecucion") return "Ejecución";
-      if (s === "cierre") return "Cierre";
-      return "Inicio";
+    scrum: {
+        label: "Scrum / Ágil",
+        phases: ["Descubrimiento", "Ejecución Iterativa", "Cierre"],
+        artifacts: {
+            Descubrimiento: ["Visión de Producto", "Product Backlog"],
+            "Ejecución Iterativa": ["Sprint Backlog", "Increment", "DoD/DoR"],
+            Cierre: ["Release Notes", "Retro final"],
+        },
     },
-    artifacts: {
-      Inicio: ["Mandato del Proyecto"],
-      Planificación: [
-        "Plan de Dirección",
-        "Gestión de Beneficios",
-        "Gestión de Interesados",
-      ],
-      Ejecución: ["Gestión de Recursos", "Adquisiciones"],
-      "Monitoreo y Control": ["Revisión de Beneficios", "Aseguramiento"],
-      Cierre: ["Transferencia Operacional"],
-    },
-  },
-  agil: {
-    label: "Scrum / Ágil",
-    phases: ["Descubrimiento", "Ejecución Iterativa", "Cierre"],
-    mapStage(stage) {
-      const s = (stage || "").toLowerCase();
-      if (s === "idea" || s === "planificacion") return "Descubrimiento";
-      if (s === "ejecucion") return "Ejecución Iterativa";
-      if (s === "cierre") return "Cierre";
-      return "Descubrimiento";
-    },
-    artifacts: {
-      Descubrimiento: ["Visión de Producto", "Product Backlog"],
-      "Ejecución Iterativa": ["Sprint Backlog", "Increment", "DoD/DoR"],
-      Cierre: ["Release Notes", "Retro final"],
-    },
-  },
 };
 
-/* ======= estilos ======= */
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(1200px 600px at 10% 0%, #1a1030 0%, #0b0d10 45%, #080a0d 100%)",
-    color: "#fff",
-    padding: "24px",
-  },
-  container: { maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 },
-  h1: { margin: 0, fontSize: 24, fontWeight: 700 },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  card: {
-    background: "linear-gradient(180deg,#101215,#0b0d10)",
-    border: "1px solid rgba(255,255,255,.06)",
-    borderRadius: 16,
-    padding: 16,
-    boxShadow: "0 10px 25px rgba(0,0,0,.18)",
-  },
-  sectionTitle: { fontWeight: 600, fontSize: 18, marginBottom: 8 },
-  muted: { color: "rgba(255,255,255,.7)" },
-  mutedSmall: { color: "rgba(255,255,255,.7)", fontSize: 12 },
-  strong: { fontWeight: 700 },
-  progressWrap: { display: "grid", gap: 6 },
-  progressTrack: {
-    height: 10,
-    borderRadius: 8,
-    background: "rgba(255,255,255,.08)",
-  },
-  progressBar: {
-    height: "100%",
-    borderRadius: 8,
-    background: "linear-gradient(90deg,#6d28d9,#a21caf)",
-  },
-  timelineTrack: { display: "grid", gap: 16 },
-  timelineItemWrap: {
-    display: "grid",
-    gridTemplateColumns: "24px 1fr",
-    alignItems: "start",
-    gap: 12,
-    position: "relative",
-  },
-  connector: {
-    position: "absolute",
-    left: 11,
-    top: -8,
-    bottom: -8,
-    width: 2,
-    borderRadius: 2,
-  },
-  dot: {
-    width: 22,
-    height: 22,
-    borderRadius: "50%",
-    border: "2px solid rgba(255,255,255,.12)",
-  },
-  timelineLabel: { display: "grid", gap: 6 },
-  phaseTitle: { fontWeight: 600 },
-  artifacts: { margin: 0, paddingLeft: 18, color: "rgba(255,255,255,.85)" },
-  row: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    border: "1px solid rgba(255,255,255,.06)",
-    borderRadius: 12,
-    padding: "10px 12px",
-    background: "rgba(255,255,255,.03)",
-  },
-  rowTitle: { fontWeight: 600 },
-  badge: {
-    padding: "4px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,.25)",
-    fontSize: 12,
-  },
-  primaryBtn: {
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: "1px solid #6d28d9",
-    background: "linear-gradient(90deg,#6d28d9,#a21caf)",
-    color: "#fff",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-  ghostBtn: {
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,.15)",
-    background: "transparent",
-    color: "#fff",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-};
-
-/* ======= componente ======= */
 export default function Progreso() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const all = await projectsApi.list();
-        const p = all.find((x) => String(x.id) === String(id));
-        if (mounted) setProject(p || null);
-      } catch (e) {
-        alert(e.message || "No se pudo cargar el proyecto");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
+    // 🎯 1. ESTADO PARA IDIOMA (Cargado desde prefs del assistant)
+    const [language, setLanguage] = useState("es");
+
+    // 🎯 2. FUNCIÓN T()
+    const T = (key, fallback = key) => {
+        // Devuelve el texto plano si es un nombre de artefacto/fase (no traducible por clave)
+        if (typeof translations[key] !== 'object' && !translations[language] || !translations[language][key]) {
+            if (key === fallback) return fallback;
+            if (!translations[language] || !translations[language][key]) return fallback;
+        }
+        return translations[language][key];
     };
-  }, [id]);
 
-  if (loading)
-    return <main style={{ padding: 24, color: "#fff" }}>Cargando…</main>;
-  if (!project)
+    // 1) Traer contexto y preferencias desde Assistant
+    const [ctx, setCtx] = useState(() => {
+        const savedSession = JSON.parse(localStorage.getItem("assistant_session") || "null");
+        const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
+        
+        // Inicializa el idioma con las preferencias guardadas
+        const initialLang = savedPrefs.language || "es";
+        setLanguage(initialLang); 
+
+        return {
+            standard: savedSession?.standard || "pmbok",
+            phase: savedSession?.phase || KB.pmbok.phases[0],
+            industry: savedSession?.industry || "",
+        };
+    });
+
+      useEffect(() => {
+        const syncProgress = () => {
+          const savedSession = JSON.parse(localStorage.getItem("assistant_session") || "null");
+          const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
+
+          const newLang = savedPrefs.language || "es";
+          setLanguage(newLang);
+
+          if (savedSession) {
+            setCtx({
+              standard: savedSession.standard || "pmbok",
+              phase: savedSession.phase || KB.pmbok.phases[0],
+              industry: savedSession.industry || "",
+            });
+          }
+        };
+
+        // 🔄 Actualiza al enfocar o guardar
+        window.addEventListener("focus", syncProgress);
+        window.addEventListener("projectSaved", syncProgress);
+
+        // 🔁 Ejecuta al cargar
+        syncProgress();
+
+        return () => {
+          window.removeEventListener("focus", syncProgress);
+          window.removeEventListener("projectSaved", syncProgress);
+        };
+      }, []);
+
+
+    const kb = KB[ctx.standard];
+
+    // 🎯 Usar T() para traducir el nombre de la fase (si existe)
+    const currentPhaseLabel = T(ctx.phase, ctx.phase); 
+    // 🎯 Usar T() para traducir los nombres de las fases y encontrar el índice
+    const phaseIndex = useMemo(() => {
+        const phases = kb.phases.map(p => T(p, p));
+        return phases.findIndex(p => p === currentPhaseLabel);
+    }, [kb, currentPhaseLabel]);
+    
+    const total = kb.phases.length;
+    const percent = Math.round(((phaseIndex + 1) / total) * 100);
+
+    // 2) Construir timeline (con traducciones)
+    const timeline = useMemo(() => {
+        return kb.phases.map((p, i) => {
+            // Traducir el nombre de la fase
+            const title = T(p, p); 
+            const status = i < phaseIndex ? "done" : i === phaseIndex ? "current" : "next";
+            // Traducir los artefactos
+            const artifacts = (kb.artifacts?.[p] || []).map(a => T(a, a)).slice(0, 3); // top 3 para no saturar
+            return { id: p, title, status, artifacts };
+        });
+    }, [kb, phaseIndex, T]); // <-- Dependencia en T para que se reactive al cambiar idioma
+
     return (
-      <main style={{ padding: 24, color: "#fff" }}>
-        <p>No se encontró el proyecto.</p>
-        <button onClick={() => navigate("/dashboard")}>← Volver</button>
-      </main>
+        <main className="progreso-page">
+            <div className="progreso-container">
+                {/* Header */}
+                <div className="progreso-header">
+                    <div>
+                        {/* 🎯 T() */}
+                        <h1 className="progreso-h1">{T("PROGRESS_TITLE", "Progreso del Proyecto")}</h1>
+                        <div className="progreso-muted">
+                            {/* 🎯 T() */}
+                            {T("FRAMEWORK_LABEL", "Marco")}: <strong>{kb.label}</strong>
+                            {/* 🎯 T() */}
+                            {ctx.industry ? <> • {T("INDUSTRY_LABEL", "Industria")}: <strong>{ctx.industry}</strong></> : null}
+                        </div>
+                    </div>
+                    {/* Estilo combinado para flex/gap/wrap (debe ser reubicado en CSS si es posible) */}
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {/* 🎯 T() */}
+                        <button className="progreso-ghost-btn" onClick={() => navigate("/assistant")}>← {T("GO_TO_ASSISTANT_BTN", "Ir al Assistant")}</button>
+                        {/* 🎯 T() */}
+                        <button className="progreso-primary-btn" onClick={() => navigate(`/wizard?standard=${ctx.standard}&phase=${ctx.phase}`)}>{T("OPEN_WIZARD_BTN", "Abrir Wizard")}</button>
+                    </div>
+                </div>
+
+                {/* Barra progreso */}
+                <div className="progreso-card">
+                    {/* 🎯 T() */}
+                    <div className="progreso-section-title">{T("GLOBAL_PROGRESS_TITLE", "Avance global")}</div>
+                    <div className="progreso-progress-wrap">
+                        <div className="progreso-progress-track">
+                            {/* Estilo inline para el porcentaje dinámico */}
+                            <div className="progreso-progress-bar" style={{ width: `${percent}%` }} />
+                        </div>
+                        {/* Estilo combinado para flex/justify (debe ser reubicado en CSS si es posible) */}
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+                            {/* 🎯 T() */}
+                            <span className="progreso-muted">{T("CURRENT_PHASE_LABEL", "Fase actual")}: <strong>{currentPhaseLabel}</strong></span>
+                            <span className="progreso-strong">{percent}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Línea temporal */}
+                <div className="progreso-card">
+                    {/* 🎯 T() */}
+                    <div className="progreso-section-title">{T("TIMELINE_TITLE", "Línea temporal por fases")}</div>
+
+                    {/* bullets horizontales */}
+                    <div className="progreso-timeline-track">
+                        {timeline.map((t, i) => (
+                            <div key={t.id} className="progreso-timeline-item-wrap">
+                                {/* Conector */}
+                                {i > 0 && <span className={`progreso-connector ${i < phaseIndex ? 'done' : 'next'}`} />}
+
+                                {/* Punto */}
+                                <div className={`progreso-dot ${t.status}`} />
+
+                                {/* Etiqueta */}
+                                <div className="progreso-timeline-label">
+                                    <div className="progreso-phase-title">
+                                        {/* 🎯 T() - Traducción del estado de la fase */}
+                                        {t.title} {t.status === "current" ? `• ${T("STATUS_CURRENT", "Actual")}` : t.status === "done" ? `• ${T("STATUS_DONE", "Completada")}` : `• ${T("STATUS_NEXT", "Próxima")}`}
+                                    </div>
+                                    {t.artifacts.length > 0 && (
+                                        <ul className="progreso-artifacts">
+                                            {t.artifacts.map(a => <li key={a}>{a}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Lista vertical resumida */}
+                <div className="progreso-card">
+                    {/* 🎯 T() */}
+                    <div className="progreso-section-title">{T("SUMMARY_TITLE", "Resumen por etapa")}</div>
+                    {/* Estilo combinado para grid/gap (debe ser reubicado en CSS si es posible) */}
+                    <div style={{ display: "grid", gap: 12 }}>
+                        {timeline.map((t, i) => (
+                            <div key={t.id} className="progreso-row">
+                                <span className={`progreso-badge ${t.status}`}>
+                                    {i + 1}/{total}
+                                </span>
+                                <div style={{ flex: 1 }}>{/* Estilo inline para flex (propiedad funcional) */}
+                                    <div className="progreso-row-title">{t.title}</div>
+                                    <div className="progreso-muted-small">
+                                        {/* 🎯 T() - Traducción del estado */}
+                                        {t.status === "current" ? T("STATUS_IN_EXECUTION", "En ejecución") : t.status === "done" ? T("STATUS_FINALIZED", "Finalizada") : T("STATUS_PENDING", "Pendiente")}
+                                    </div>
+                                </div>
+                                {/* 🎯 T() - Traducción de 'Artefacto clave' */}
+                                {t.artifacts[0] && <div className="progreso-muted-small">{T("KEY_ARTIFACT_LABEL", "Artefacto clave")}: <strong>{t.artifacts[0]}</strong></div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 🎯 T() - Tip final */}
+                <div className="progreso-muted" style={{ marginTop: 4 }}>
+                    {T("PROGRESS_TIP", "Tip: cambia el marco/fase en el Assistant y vuelve a esta vista — se actualizará automáticamente.")}
+                </div>
+            </div>
+        </main>
     );
-
-  // === lógica de progreso ===
-  const kb = KB[(project.methodology || "pmbok").toLowerCase()] || KB.pmbok;
-  const visiblePhase = kb.mapStage(project.stage);
-  const phases = kb.phases;
-  const phaseIndex = Math.max(
-    0,
-    phases.findIndex((x) => x === visiblePhase)
-  );
-  const total = phases.length || 1;
-  const percent = Math.round(((phaseIndex + 1) / total) * 100);
-  const timeline = phases.map((ph, i) => {
-    const status =
-      i < phaseIndex ? "done" : i === phaseIndex ? "current" : "next";
-    const artifacts = (kb.artifacts?.[ph] || []).slice(0, 3);
-    return { id: ph, title: ph, status, artifacts };
-  });
-  const wizardHref =
-    `/wizard?standard=${encodeURIComponent(project.methodology || "pmbok")}` +
-    `&phase=${encodeURIComponent(project.stage || "")}` +
-    (project.domain ? `&domain=${encodeURIComponent(project.domain)}` : "");
-
-  // === render ===
-  return (
-    <main style={styles.page}>
-      <div style={styles.container}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div>
-            <h1 style={styles.h1}>Progreso del Proyecto</h1>
-            <div style={styles.muted}>
-              <b>{project.name}</b> — Marco: <strong>{kb.label}</strong>
-              {project.domain ? (
-                <>
-                  {" "}
-                  · Dominio: <strong>{project.domain}</strong>
-                </>
-              ) : null}
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              style={styles.ghostBtn}
-              onClick={() => navigate("/assistant")}
-            >
-              ← Ir al Assistant
-            </button>
-            <button
-              style={styles.primaryBtn}
-              onClick={() => navigate(wizardHref)}
-            >
-              Abrir Wizard
-            </button>
-          </div>
-        </div>
-
-        {/* Barra progreso */}
-        <div style={styles.card}>
-          <div style={styles.sectionTitle}>Avance global</div>
-          <div style={styles.progressWrap}>
-            <div style={styles.progressTrack}>
-              <div style={{ ...styles.progressBar, width: `${percent}%` }} />
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: 8,
-              }}
-            >
-              <span style={styles.muted}>
-                Fase actual: <strong>{visiblePhase}</strong>
-              </span>
-              <span style={styles.strong}>{percent}%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Línea temporal */}
-        <div style={styles.card}>
-          <div style={styles.sectionTitle}>Línea temporal por fases</div>
-          <div style={styles.timelineTrack}>
-            {timeline.map((t, i) => (
-              <div key={t.id} style={styles.timelineItemWrap}>
-                {i > 0 && (
-                  <span
-                    style={{
-                      ...styles.connector,
-                      background:
-                        t.status === "done"
-                          ? "rgba(34,197,94,.8)"
-                          : "rgba(255,255,255,.18)",
-                    }}
-                  />
-                )}
-                <div
-                  style={{
-                    ...styles.dot,
-                    background:
-                      t.status === "done"
-                        ? "#22c55e"
-                        : t.status === "current"
-                        ? "#60a5fa"
-                        : "rgba(255,255,255,.35)",
-                    boxShadow:
-                      t.status === "current"
-                        ? "0 0 0 6px rgba(96,165,250,.15)"
-                        : "none",
-                  }}
-                />
-                <div style={styles.timelineLabel}>
-                  <div style={styles.phaseTitle}>
-                    {t.title}{" "}
-                    {t.status === "current"
-                      ? "• Actual"
-                      : t.status === "done"
-                      ? "• Completada"
-                      : "• Próxima"}
-                  </div>
-                  {t.artifacts.length > 0 && (
-                    <ul style={styles.artifacts}>
-                      {t.artifacts.map((a) => (
-                        <li key={a}>{a}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Resumen vertical */}
-        <div style={styles.card}>
-          <div style={styles.sectionTitle}>Resumen por etapa</div>
-          <div style={{ display: "grid", gap: 12 }}>
-            {timeline.map((t, i) => (
-              <div key={t.id} style={styles.row}>
-                <span
-                  style={{
-                    ...styles.badge,
-                    borderColor:
-                      t.status === "current"
-                        ? "#60a5fa"
-                        : t.status === "done"
-                        ? "#22c55e"
-                        : "rgba(255,255,255,.25)",
-                    background:
-                      t.status === "current"
-                        ? "rgba(96,165,250,.15)"
-                        : t.status === "done"
-                        ? "rgba(34,197,94,.12)"
-                        : "transparent",
-                  }}
-                >
-                  {i + 1}/{phases.length}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={styles.rowTitle}>{t.title}</div>
-                  <div style={styles.mutedSmall}>
-                    {t.status === "current"
-                      ? "En ejecución"
-                      : t.status === "done"
-                      ? "Finalizada"
-                      : "Pendiente"}
-                  </div>
-                </div>
-                {t.artifacts[0] && (
-                  <div style={styles.mutedSmall}>
-                    Artefacto clave: <strong>{t.artifacts[0]}</strong>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ ...styles.muted, marginTop: 4 }}>
-          Tip: si editas este proyecto en el Wizard y cambias la fase, aquí
-          verás el avance actualizado.
-        </div>
-      </div>
-    </main>
-  );
 }

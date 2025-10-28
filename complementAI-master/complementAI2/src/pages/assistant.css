@@ -552,3 +552,26 @@
   overflow-y: auto;
   padding: 24px 0 120px;
 }
+
+.asst-save-container {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  z-index: 5;
+  position: relative;
+}
+
+.save-btn {
+  background-color: #9333ea;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.save-btn:hover {
+  background-color: #a855f7;
+}

@@ -24,7 +24,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/wizard" element={<Wizard />} />
         <Route path="/dashboard" element={<DashBoard />} />
-        <Route path="/progreso/:id" element={<Progreso />} />
+        <Route path="/Progreso" element={<Progreso />} />
       </Route>
 
       {/* fallback */}

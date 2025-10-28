@@ -437,3 +437,369 @@
   padding: 10px 12px; 
   border-radius: 16px; /* suaviza las esquinas */
 }
+
+
+
+/* ====== THEME: Light mejorado ====== */
+.light .assistant-screen[data-theme="ink"] {
+  --asst-bg: #ffffff; /* fondo blanco puro */
+  --asst-text: #1e293b; /* gris oscuro legible */
+  --asst-muted: #64748b; /* gris medio */
+  --asst-border: #e2e8f0; /* gris claro para bordes */
+  --asst-primary: #2563eb; /* azul más vivo */
+  --asst-primary-2: #1d4ed8;
+  --asst-surface: #ffffff;
+  --asst-surface-2: #f8fafc; /* sutil contraste */
+  --asst-r: 16px;
+  --asst-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== THEME: versión clara (light) del tema Plum ===== */
+.light .assistant-screen[data-theme="plum"] {
+  --asst-bg: #ffffff;          /* fondo principal blanco */
+  --asst-text: #1e1e1e;        /* texto oscuro */
+  --asst-muted: #6b7280;       /* texto gris medio */
+  --asst-border: #e5e7eb;      /* bordes suaves */
+  --asst-primary: #7c3aed;     /* morado distintivo plum */
+  --asst-surface: #f9fafb;     /* superficie clara (tarjetas) */
+  --asst-surface-2: #f3f4f6;   /* segunda capa clara */
+  --asst-r: 16px;
+  --asst-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+
+/* RAÍZ */
+.light .assistant-screen {
+  min-height: 100vh;
+  padding: 16px;
+  background: var(--asst-bg);
+  color: var(--asst-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Barra superior */
+.light .asst-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: 0 0 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa, #93c5fd);
+  border-radius: var(--asst-r);
+  box-shadow: var(--asst-shadow);
+}
+.light .asst-appbar-title {
+  font-weight: 800;
+  color: #fff;
+  font-size: 18px;
+}
+.light .asst-appbar-btn {
+  background: var(--asst-primary);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.light .asst-appbar-btn:hover {
+  background: var(--asst-primary-2);
+}
+
+/* GRID */
+.light .asst-wrap {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  max-width: 1600px;
+  width: 95vw;
+  margin: 0 auto;
+}
+@media (max-width: 1024px) {
+  .light .asst-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Sidebar */
+.light .asst-side {
+  position: sticky;
+  top: 80px;
+  align-self: start;
+  height: calc(100dvh - 100px);
+  overflow: auto;
+}
+.light .asst-card {
+  background: var(--asst-surface);
+  border: 1px solid var(--asst-border);
+  border-radius: var(--asst-r);
+  padding: 16px;
+  box-shadow: var(--asst-shadow);
+}
+.light .asst-side-title {
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--asst-text);
+}
+.light .asst-btn {
+  border: 1px solid var(--asst-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--asst-surface-2);
+  color: var(--asst-text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.light .asst-btn:hover {
+  background: #e2e8f0;
+}
+.light .asst-btn.primary {
+  background: var(--asst-primary);
+  color: #fff;
+  border: 0;
+}
+.light .asst-btn.primary:hover {
+  background: var(--asst-primary-2);
+}
+.light .asst-label {
+  display: block;
+  margin: 10px 0 6px;
+  color: var(--asst-muted);
+  font-size: 12px;
+}
+.light .asst-input,
+.light .asst-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--asst-border);
+  background: var(--asst-surface);
+  color: var(--asst-text);
+}
+
+/* Chat */
+.light .asst-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 140px);
+}
+.light .asst-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 32px 0 16px;
+  display: flex;
+  flex-direction: column;
+}
+.light .asst-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 0 24px;
+}
+.light .asst-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--asst-primary);
+}
+.light .asst-avatar.me {
+  background: var(--asst-primary);
+}
+
+/* Burbujas */
+.light .asst-bubble {
+  max-width: 800px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  line-height: 1.55;
+  background: var(--asst-surface-2);
+  color: var(--asst-text);
+  border: 1px solid var(--asst-border);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.light .asst-row.me .asst-bubble {
+  background: var(--asst-primary);
+  color: #fff;
+}
+.light .asst-meta {
+  font-size: 12px;
+  color: var(--asst-muted);
+  margin-bottom: 6px;
+}
+
+/* contenido del usuario: bloque suave */
+.light .asst-block.me .asst-content {
+  background: var(--asst-primary);
+  color: #ffffff;
+  border: 1px solid rgba(183, 183, 183, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  line-height: 1.55;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Código / Markdown */
+.light .asst-content pre,
+.light .asst-bubble pre {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  border-radius: 10px;
+  overflow: auto;
+}
+.light .asst-content code,
+.light .asst-bubble code {
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Composer */
+.light .asst-composer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.95), transparent);
+  backdrop-filter: blur(8px);
+}
+.light .asst-composer textarea {
+  flex: 1;
+  resize: none;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--asst-border);
+  background: var(--asst-surface);
+  color: var(--asst-text);
+}
+.light .asst-composer button {
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--asst-primary);
+  color: #fff;
+  transition: background 0.2s ease;
+}
+.light .asst-composer button:hover {
+  background: var(--asst-primary-2);
+}
+
+/* Error */
+.light .asst-error {
+  color: #dc2626;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* HERO (Landing) */
+.light .hero-shell {
+  min-height: calc(100dvh - 210px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  position: relative;
+  background: var(--asst-bg);
+}
+.light .hero-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+      600px 280px at 50% 52%,
+      rgba(0, 0, 0, 0.03),
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 380px at 50% 52%,
+      rgba(59, 130, 246, 0.08),
+      transparent 65%
+    );
+  pointer-events: none;
+}
+.light .hero-logo {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  background: linear-gradient(180deg, #93c5fd, #3b82f6);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+}
+.light .hero-title {
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(22px, 3.4vw, 34px);
+  color: var(--asst-text);
+}
+.light .hero-composer {
+  width: min(980px, 92vw);
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--asst-border);
+  border-radius: 18px;
+  padding: 56px 64px 20px;
+  box-shadow: var(--asst-shadow);
+}
+.light .hero-chip {
+  background: #f3f4f6;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.light .hero-chip:hover {
+  background: #e2e8f0;
+}
+.light .hero-input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--asst-text);
+  font-size: 18px;
+  line-height: 1.5;
+  padding-right: 120px;
+}
+.light .hero-send {
+  min-width: 44px;
+  height: 38px;
+  border-radius: 12px;
+  padding: 0 12px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+  color: #fff;
+  background: var(--asst-primary);
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.25);
+  transition: background 0.2s ease, filter 0.2s ease;
+}
+.light .hero-send:hover {
+  background: var(--asst-primary-2);
+  filter: brightness(1.05);
+}
+
+.light .assistant-chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 0 120px;
+}

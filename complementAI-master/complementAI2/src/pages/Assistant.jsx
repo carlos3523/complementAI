@@ -5,6 +5,8 @@ import { updateTheme } from "../services/auth";
 import AuthButton from "../components/AuthButton";
 import { useAuth } from "../contexts/AuthContext";
 import "./assistant.css";
+import { useLanguage } from "../contexts/LanguageContext";
+import { translations } from "../i18n/translations";
 
 /* ===============================
    Persistencia (localStorage)
@@ -27,21 +29,24 @@ const seedThread = () => ({
 });
 
 /* ===============================
-   HERO (landing) estilo DeepSeek
+   HERO (landing)
    =============================== */
 function EmptyHero({ value, setValue, onSend }) {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   return (
     <div className="hero-shell">
       <div className="hero-logo" aria-hidden>
         🜲
       </div>
-      <h1 className="hero-title">How can I help you?</h1>
+      <h1 className="hero-title">{t.heroTitle}</h1>
 
       <div className="hero-composer">
         <textarea
           className="hero-input"
           rows={2}
-          placeholder="Message Assistant"
+          placeholder={t.writeMessage}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
@@ -52,10 +57,10 @@ function EmptyHero({ value, setValue, onSend }) {
           }}
         />
         <div className="hero-actions">
-          <button className="hero-icon" title="Adjuntar">
+          <button className="hero-icon" title={t.attach}>
             📎
           </button>
-          <button className="hero-send" onClick={onSend} title="Enviar">
+          <button className="hero-send" onClick={onSend} title={t.send}>
             ↑
           </button>
         </div>
@@ -69,23 +74,22 @@ function EmptyHero({ value, setValue, onSend }) {
    =============================== */
 export default function AssistantPage() {
   const { user, token } = useAuth();
+  const { language } = useLanguage();
+  const t = translations[language];
 
-  //clave de almacenamiento por usuario o guest
   const STORAGE_KEY = `asst_threads_v1_${user?.id || "guest"}`;
-
   const navigate = useNavigate();
+
   const [theme, setTheme] = useState(
     () => localStorage.getItem("asst_theme") || "ink"
   );
   useEffect(() => localStorage.setItem("asst_theme", theme), [theme]);
 
-  /** ---------- UI ---------- */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
-  /** ---------- Hilos / historial ---------- */
   const [threads, setThreads] = useState(() => {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     return saved.length ? saved : [seedThread()];
@@ -96,55 +100,39 @@ export default function AssistantPage() {
 
   const current = threads.find((t) => t.id === currentId) || threads[0];
   const [messages, setMessages] = useState(current.messages);
-
-  /** refs para auto-scroll */
   const endRef = useRef(null);
 
-  /** ¿hay mensajes de usuario en el hilo? */
   const hasUserMsgs = messages.some((m) => m.role === "user");
 
-  // cuando cambia el usuario (o pasa de guest→logueado), re-carga su propio historial
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     setThreads(saved.length ? saved : [seedThread()]);
   }, [STORAGE_KEY]);
 
-  // persiste usando la nueva clave por usuario
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(threads));
   }, [threads, STORAGE_KEY]);
 
-  /** re-sincroniza mensajes cuando cambia el hilo activo */
   useEffect(() => {
     setMessages(current.messages || []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId]);
 
-  /** persiste hilos en localStorage */
-  useEffect(() => {
-    localStorage.setItem(LS_THREADS, JSON.stringify(threads));
-  }, [threads]);
-
-  /** propaga cambios de mensajes al hilo actual */
   useEffect(() => {
     setThreads((prev) =>
       prev.map((t) => (t.id === currentId ? { ...t, messages } : t))
     );
   }, [messages, currentId]);
 
-  /** auto-scroll cuando cambian mensajes o loading */
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
 
-  /** título inteligente desde el primer mensaje del usuario */
   function smartTitleFrom(text) {
     const oneLine = text.replace(/\s+/g, " ").trim();
     const first = oneLine.split(/[.!?]|$/)[0].trim();
-    return (first || oneLine).slice(0, 60) || "Sin título";
+    return (first || oneLine).slice(0, 60) || t.untitled;
   }
 
-  /** enviar mensaje */
   async function handleSend() {
     setErrMsg("");
     const text = input.trim();
@@ -157,10 +145,7 @@ export default function AssistantPage() {
 
     try {
       const responseText = await chat([
-        {
-          role: "system",
-          content: "You are ComplementAI, an assistant for project management.",
-        },
+        { role: "system", content: "You are ComplementAI, a project assistant." },
         { role: "user", content: text },
       ]);
       const aiMsg = {
@@ -172,12 +157,11 @@ export default function AssistantPage() {
       setMessages((m) => [...m, aiMsg]);
     } catch (err) {
       console.error(err);
-      setErrMsg(err.message || "Error al obtener respuesta del asistente");
+      setErrMsg(err.message || t.errorResponse);
     } finally {
       setLoading(false);
     }
 
-    // Renombrar hilo si es el primer mensaje del usuario
     const isFirstUserMsg = !messages.some((m) => m.role === "user");
     if (isFirstUserMsg) {
       const newTitle = smartTitleFrom(text);
@@ -187,12 +171,11 @@ export default function AssistantPage() {
     }
   }
 
-  /** ---------- acciones del historial ---------- */
   function newThread() {
-    const t = seedThread();
-    setThreads([t, ...threads]);
-    setCurrentId(t.id);
-    setMessages(t.messages);
+    const t0 = seedThread();
+    setThreads([t0, ...threads]);
+    setCurrentId(t0.id);
+    setMessages(t0.messages);
   }
 
   function selectThread(id) {
@@ -206,10 +189,10 @@ export default function AssistantPage() {
   function deleteThread(id) {
     const next = threads.filter((t) => t.id !== id);
     if (!next.length) {
-      const t = seedThread();
-      setThreads([t]);
-      setCurrentId(t.id);
-      setMessages(t.messages);
+      const t0 = seedThread();
+      setThreads([t0]);
+      setCurrentId(t0.id);
+      setMessages(t0.messages);
       return;
     }
     setThreads(next);
@@ -224,12 +207,11 @@ export default function AssistantPage() {
   function renameThread(id, title) {
     setThreads((prev) =>
       prev.map((t) =>
-        t.id === id ? { ...t, title: title.trim() || "Sin título" } : t
+        t.id === id ? { ...t, title: title.trim() || t.untitled } : t
       )
     );
   }
 
-  /** ---------- render ---------- */
   return (
     <main
       className={`assistant-screen ${sidebarOpen ? "" : "is-collapsed"}`}
@@ -237,41 +219,24 @@ export default function AssistantPage() {
     >
       {/* Appbar */}
       <div className="asst-appbar">
-        <div
-          className="asst-appbar-left"
-          style={{ display: "flex", gap: 12, alignItems: "center" }}
-        >
+        <div className="asst-appbar-left" style={{ display: "flex", gap: 12 }}>
           <button
             className="asst-appbar-icon"
             onClick={() => setSidebarOpen((v) => !v)}
-            title={sidebarOpen ? "Ocultar panel" : "Mostrar panel"}
-            style={{
-              border: 0,
-              borderRadius: 12,
-              background: "rgba(255,255,255,.12)",
-              color: "#fff",
-              padding: "8px 12px",
-              cursor: "pointer",
-              fontWeight: 800,
-            }}
+            title={sidebarOpen ? t.hidePanel : t.showPanel}
           >
             ☰
           </button>
-          <div className="asst-appbar-title">📁 Asistente de Proyectos</div>
+          <div className="asst-appbar-title">📁 {t.projectAssistant}</div>
         </div>
 
-        <div
-          className="asst-appbar-actions"
-          style={{ display: "flex", gap: 8 }}
-        >
+        <div className="asst-appbar-actions" style={{ display: "flex", gap: 8 }}>
           <button
             className="asst-appbar-btn"
             onClick={() =>
               token
                 ? navigate("/wizard")
-                : navigate("/login", {
-                    state: { from: { pathname: "/Wizard" } },
-                  })
+                : navigate("/login", { state: { from: { pathname: "/Wizard" } } })
             }
           >
             Wizard
@@ -281,9 +246,7 @@ export default function AssistantPage() {
             onClick={() =>
               token
                 ? navigate("/dashboard")
-                : navigate("/login", {
-                    state: { from: { pathname: "/DashBoard" } },
-                  })
+                : navigate("/login", { state: { from: { pathname: "/DashBoard" } } })
             }
           >
             Dashboard
@@ -298,176 +261,112 @@ export default function AssistantPage() {
         </div>
       </div>
 
-      {/* Layout: sidebar + chat */}
+      {/* Layout */}
       <div className="asst-wrap">
         {/* Sidebar */}
         <aside className="asst-side">
           <div className="asst-card">
-            <div className="asst-side-title">Acciones</div>
+            <div className="asst-side-title">{t.actions}</div>
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <button className="asst-btn primary" onClick={newThread}>
-                + Nuevo chat
+                + {t.newChat}
               </button>
               <button
                 className="asst-btn"
                 onClick={() => alert("Exporta historial aquí")}
               >
-                Exportar
+                {t.export}
+              </button>
+              <button
+                className="asst-btn"
+                onClick={() =>
+                  token
+                    ? navigate("/Progreso")
+                    : navigate("/login", { state: { from: { pathname: "/Progreso" } } })
+                }
+              >
+                {t.progress || "Progreso"}
               </button>
             </div>
 
             <div className="asst-side-title" style={{ marginTop: 6 }}>
-              Historial
+              {t.history}
             </div>
             <div className="asst-thread-list">
-              {threads.map((t) => {
-                const active = t.id === currentId;
-                const editing = editingId === t.id;
+              {threads.map((t0) => {
+                const active = t0.id === currentId;
+                const editing = editingId === t0.id;
                 return (
                   <div
-                    key={t.id}
+                    key={t0.id}
                     className={`asst-thread ${active ? "active" : ""}`}
                     onMouseLeave={() =>
-                      setMenuOpenId((id) => (id === t.id ? null : id))
+                      setMenuOpenId((id) => (id === t0.id ? null : id))
                     }
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 8,
-                      padding: 10,
-                      borderRadius: 12,
-                      border: "1px solid rgba(255,255,255,.08)",
-                      background: "rgba(255,255,255,.05)",
-                      marginBottom: 8,
-                    }}
                   >
                     <div
                       className="asst-thread-main"
-                      onClick={() => selectThread(t.id)}
+                      onClick={() => selectThread(t0.id)}
                       style={{ minWidth: 0, cursor: "pointer" }}
                     >
                       {editing ? (
                         <input
                           autoFocus
                           className="asst-thread-edit"
-                          defaultValue={t.title}
+                          defaultValue={t0.title}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              renameThread(t.id, e.currentTarget.value);
+                              renameThread(t0.id, e.currentTarget.value);
                               setEditingId(null);
                             }
                             if (e.key === "Escape") setEditingId(null);
                           }}
                           onBlur={(e) => {
-                            renameThread(t.id, e.currentTarget.value);
+                            renameThread(t0.id, e.currentTarget.value);
                             setEditingId(null);
-                          }}
-                          style={{
-                            width: "100%",
-                            padding: "8px 10px",
-                            borderRadius: 10,
-                            border: "1px solid rgba(255,255,255,.18)",
-                            background: "#111318",
-                            color: "#eaeaea",
                           }}
                         />
                       ) : (
                         <>
-                          <div
-                            className="asst-thread-title"
-                            title={t.title}
-                            style={{
-                              fontWeight: 700,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {t.title || "Sin título"}
+                          <div className="asst-thread-title" title={t0.title}>
+                            {t0.title || t.untitled}
                           </div>
-                          <div
-                            className="asst-thread-sub"
-                            style={{ fontSize: 12, opacity: 0.7 }}
-                          >
-                            {new Date(t.createdAt).toLocaleDateString()} ·{" "}
-                            {t.messages?.length || 0} msgs
+                          <div className="asst-thread-sub">
+                            {new Date(t0.createdAt).toLocaleDateString()} ·{" "}
+                            {t0.messages?.length || 0} msgs
                           </div>
                         </>
                       )}
                     </div>
 
-                    {/* Kebab */}
-                    <div
-                      className="asst-thread-kebab"
-                      style={{ position: "relative" }}
-                    >
+                    <div className="asst-thread-kebab">
                       <button
                         className="asst-kebab-btn"
-                        onMouseEnter={() => setMenuOpenId(t.id)}
+                        onMouseEnter={() => setMenuOpenId(t0.id)}
                         onClick={() =>
-                          setMenuOpenId((id) => (id === t.id ? null : t.id))
+                          setMenuOpenId((id) => (id === t0.id ? null : t0.id))
                         }
-                        aria-label="Opciones"
-                        title="Opciones"
-                        style={{
-                          border: "1px solid rgba(255,255,255,.18)",
-                          background: "transparent",
-                          color: "#e5e7eb",
-                          borderRadius: 8,
-                          padding: "2px 6px",
-                          cursor: "pointer",
-                        }}
+                        aria-label={t.options}
+                        title={t.options}
                       >
                         ⋯
                       </button>
 
-                      {menuOpenId === t.id && (
-                        <div
-                          className="asst-kebab-menu"
-                          style={{
-                            position: "absolute",
-                            right: 0,
-                            top: "110%",
-                            background: "#15151a",
-                            border: "1px solid rgba(255,255,255,.12)",
-                            borderRadius: 10,
-                            padding: 8,
-                            display: "grid",
-                            gap: 6,
-                            zIndex: 5,
-                          }}
-                        >
+                      {menuOpenId === t0.id && (
+                        <div className="asst-kebab-menu">
                           <button
                             onClick={() => {
-                              setEditingId(t.id);
+                              setEditingId(t0.id);
                               setMenuOpenId(null);
                             }}
-                            style={{
-                              border: 0,
-                              background: "transparent",
-                              color: "#eaeaea",
-                              textAlign: "left",
-                              padding: "6px 8px",
-                              borderRadius: 8,
-                              cursor: "pointer",
-                            }}
                           >
-                            Renombrar
+                            {t.rename}
                           </button>
                           <button
                             className="danger"
-                            onClick={() => deleteThread(t.id)}
-                            style={{
-                              border: 0,
-                              background: "transparent",
-                              color: "#ef4444",
-                              textAlign: "left",
-                              padding: "6px 8px",
-                              borderRadius: 8,
-                              cursor: "pointer",
-                            }}
+                            onClick={() => deleteThread(t0.id)}
                           >
-                            Eliminar
+                            {t.delete}
                           </button>
                         </div>
                       )}
@@ -478,17 +377,21 @@ export default function AssistantPage() {
             </div>
 
             <div className="asst-side-title" style={{ marginTop: 12 }}>
-              Contexto
+              {t.framework}
             </div>
-            <label className="asst-label">Marco</label>
             <select className="asst-select" defaultValue="PMBOK®">
               <option>PMBOK®</option>
               <option>ISO 21502</option>
               <option>Scrum</option>
             </select>
 
-            <label className="asst-label">Industria</label>
-            <input className="asst-input" placeholder="Salud, Retail, Banca…" />
+            <div className="asst-side-title" style={{ marginTop: 12 }}>
+              {t.industry}
+            </div>
+            <input
+              className="asst-input"
+              placeholder="Salud, Retail, Banca…"
+            />
           </div>
         </aside>
 
@@ -501,7 +404,7 @@ export default function AssistantPage() {
               <div className="assistant-chat">
                 {messages.map((m) => {
                   const isUser = m.role === "user";
-                  const meta = `${isUser ? "Tú" : "Asistente"} • ${new Date(
+                  const meta = `${isUser ? "Tú" : t.projectAssistant} • ${new Date(
                     m.ts
                   ).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -512,21 +415,21 @@ export default function AssistantPage() {
                       key={m.id}
                       className={`asst-row ${isUser ? "me" : "ai"}`}
                     >
-                      {!isUser && <div className="asst-avatar" aria-hidden />}
+                      {!isUser && <div className="asst-avatar" />}
                       <div className={`asst-block ${isUser ? "me" : "ai"}`}>
                         <div className="asst-meta">{meta}</div>
                         <div className="asst-content">{m.text}</div>
                       </div>
-                      {isUser && <div className="asst-avatar me" aria-hidden />}
+                      {isUser && <div className="asst-avatar me" />}
                     </div>
                   );
                 })}
                 {loading && (
                   <div className="asst-row ai">
-                    <div className="asst-avatar" aria-hidden />
+                    <div className="asst-avatar" />
                     <div className="asst-block ai">
-                      <div className="asst-meta">Asistente • …</div>
-                      <div className="asst-content">Pensando…</div>
+                      <div className="asst-meta">{t.projectAssistant} • …</div>
+                      <div className="asst-content">{t.thinking}</div>
                     </div>
                   </div>
                 )}
@@ -539,7 +442,7 @@ export default function AssistantPage() {
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Escribe tu mensaje…"
+                  placeholder={t.writeMessage}
                   rows={2}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
@@ -549,7 +452,7 @@ export default function AssistantPage() {
                   }}
                 />
                 <button onClick={handleSend} disabled={loading}>
-                  {loading ? "Enviando…" : "Enviar"}
+                  {loading ? t.sending : t.send}
                 </button>
               </div>
             </>
