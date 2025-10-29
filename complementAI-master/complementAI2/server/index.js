@@ -1,4 +1,4 @@
-// server/index.js (ESM)
+//* server/index.js (ESM)
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -182,7 +182,6 @@ app.post("/api/chat", async (req, res) => {
 // pequeño healthcheck opcional
 app.get("/api/ping", (_, res) => res.json({ ok: true }));
 
-const PORT = process.env.PORT || 8787;
 app.listen(PORT, () =>
   console.log("✅ API running on http://localhost:" + PORT)
 );

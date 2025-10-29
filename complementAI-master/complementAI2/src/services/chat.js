@@ -1,7 +1,7 @@
 // src/services/chat.js
 const API_BASE =
   (import.meta.env && import.meta.env.VITE_API_URL) ||
-  "http://localhost:8787"; // 👈 Cambia aquí si tu server NO está en 8787
+  "http://localhost:4000"; // 👈 Cambia aquí si tu server NO está en 8787
 
 export async function chat(messages, model = "deepseek/deepseek-chat-v3.1") {
   const url = `${API_BASE.replace(/\/$/, "")}/api/chat`;

@@ -1,41 +1,32 @@
-import { Pool } from "pg";
-import dotenv from "dotenv";
-dotenv.config();
+// server/src/sql/db.js
+import pg from "pg";
 
-// Usa la URL completa si está definida (recomendado)
-const url = process.env.DATABASE_URL;
+const { Pool } = pg;
 
-// o, en su defecto, variables separadas (PGHOST, etc.)
-const config = url
-  ? { connectionString: url, ssl: { rejectUnauthorized: false } }
-  : {
-      host: process.env.PGHOST,
-      port: Number(process.env.PGPORT || 6543),
-      database: process.env.PGDATABASE || "postgres",
-      user: process.env.PGUSER || "postgres",
-      password: process.env.PGPASSWORD,
-      ssl: { rejectUnauthorized: false },
-    };
-
-export const pool = new Pool({
-  connectionString: url,
-  ssl: { require: true, rejectUnauthorized: false },
-});
-
-export function query(text, params) {
-  return pool.query(text, params);
+function buildSsl() {
+  const mode = (process.env.PGSSLMODE || "").toLowerCase();
+  if (mode === "no-verify") return { rejectUnauthorized: false };
+  if (mode === "require" || mode === "verify-full") return { rejectUnauthorized: true };
+  // Supabase pooler requiere SSL; si no definiste PGSSLMODE, forzamos no-verify.
+  return { rejectUnauthorized: false };
 }
 
-// Comprobación de conexión al arrancar
-pool
-  .connect()
-  .then((client) => {
-    console.log(
-      "✅ Conectado a PostgreSQL:",
-      url ? new URL(url).host : `${config.host}:${config.port}`
-    );
-    client.release();
-  })
-  .catch((err) => {
-    console.error("❌ Error conectando a PostgreSQL:", err.message);
-  });
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: buildSsl(),
+
+  // valores sanos para pooler
+  max: 10,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 5_000,
+  keepAlive: true,
+});
+
+// ¡Muy importante!: NO dejes este evento sin manejar
+pool.on("error", (err) => {
+  console.error("[pg] Pool error:", err); // loguea pero NO revienta el proceso
+});
+
+export const query = (text, params) => pool.query(text, params);
+
+
