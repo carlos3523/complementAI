@@ -1,101 +1,87 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import AuthButton from "../components/AuthButton"; // Asegúrate de que la ruta sea correcta
-import { translations } from "../i18n/translations"; // Asegúrate de tener este archivo con las claves
+import AuthButton from "../components/AuthButton"; 
+import { translations } from "../i18n/translations"; 
 
 // -------------------------------------------------------------
-// Utilidades y Almacenamiento
+// Utilidades y Almacenamiento (SIN CAMBIOS)
 // -------------------------------------------------------------
 
 /**
- * Carga las preferencias del asistente para obtener el idioma.
- * @returns {string} El código de idioma ('es' por defecto).
+ * Carga las preferencias del asistente para obtener el idioma y el tema.
  */
-const getLanguage = () => {
+const loadAssistantPrefs = () => {
     try {
         const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
-        return savedPrefs.language || "es";
+        const theme = localStorage.getItem("asst_theme") || "ink"; // Cargar el tema actual
+        return { language: savedPrefs.language || "es", theme };
     } catch {
-        return "es";
+        return { language: "es", theme: "ink" };
     }
 };
 
+const getLanguage = () => loadAssistantPrefs().language;
+
 const T_GLOBAL = (key, fallback = key) => {
     const lang = getLanguage();
-    // Manejo básico de internacionalización fuera del componente React
     if (!translations[lang] || !translations[lang][key]) return fallback;
     return translations[lang][key];
 };
 
-/**
- * Genera un ID único (UUID v4 si está disponible, o un fallback basado en tiempo).
- * @returns {string} Un ID único.
- */
 const generateUniqueId = () =>
-  (crypto?.randomUUID && crypto.randomUUID()) ||
-  `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    (crypto?.randomUUID && crypto.randomUUID()) ||
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const STORAGE_KEY = "projects";
 
-/**
- * Módulo de gestión de proyectos en localStorage.
- */
 const projectStore = {
-  get: () => {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      // Asegura que los proyectos se ordenen por fecha de creación (más reciente primero)
-      const list = data ? JSON.parse(data) : [];
-      return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    } catch (error) {
-      console.error("Error al leer proyectos de localStorage:", error);
-      return [];
-    }
-  },
-  set: (list) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    } catch (error) {
-      console.error("Error al escribir proyectos en localStorage:", error);
-    }
-  },
-  remove: (id) => {
-    const list = projectStore.get();
-    const updatedList = list.filter((p) => p.id !== id);
-    projectStore.set(updatedList);
-    return updatedList;
-  },
+    get: () => {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        const list = data ? JSON.parse(data) : [];
+        return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      } catch (error) {
+        console.error("Error al leer proyectos de localStorage:", error);
+        return [];
+      }
+    },
+    set: (list) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (error) {
+        console.error("Error al escribir proyectos en localStorage:", error);
+      }
+    },
+    remove: (id) => {
+      const list = projectStore.get();
+      const updatedList = list.filter((p) => p.id !== id);
+      projectStore.set(updatedList);
+      return updatedList;
+    },
 };
 
-/**
- * Formatea una marca de tiempo (timestamp) en un formato legible.
- * @param {number} timestamp - El timestamp de creación.
- * @returns {string} La fecha y hora formateada.
- */
 const formatCreationDate = (timestamp) => {
-  if (!timestamp) return T_GLOBAL("DATE_UNKNOWN", "Fecha desconocida"); // 🎯 T() en utilidad
-  return new Date(timestamp).toLocaleDateString(getLanguage(), { // 🎯 Usa el idioma de la configuración
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+    if (!timestamp) return T_GLOBAL("DATE_UNKNOWN", "Fecha desconocida");
+    return new Date(timestamp).toLocaleDateString(getLanguage(), {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 };
 
 // -------------------------------------------------------------
-// Componente de la Tarjeta de Proyecto
+// Componente de la Tarjeta de Proyecto (CLASES MODERNIZADAS)
 // -------------------------------------------------------------
 
 const ProjectCard = React.memo(
   ({ project, onDuplicate, onDelete, onEditInWizard, onOpenInAssistant, T }) => {
-    // Cálculo memoizado de la fecha
     const formattedDate = useMemo(
       () => formatCreationDate(project.createdAt),
       [project.createdAt]
     );
 
-    // Optimizaciones con useCallback
     const handleEdit = useCallback(
       () => onEditInWizard(project.id),
       [onEditInWizard, project.id]
@@ -113,65 +99,67 @@ const ProjectCard = React.memo(
       [onDelete, project.id]
     );
 
-    // Lógica para el texto "...y X más"
     const remainingTemplates = (project.templates || []).length - 5;
-    const moreTemplatesText = T("MORE_TEMPLATES", "...y {count} más").replace("{count}", remainingTemplates);
+    const moreTemplatesText = T("MORE_TEMPLATES", "...y {count} más").replace("{count}", remainingTemplates);
 
 
     return (
-      <article className="panel project-card">
-        <div className="card-header">
+      // 🎯 Usamos asst-card para el estilo de tarjeta del sidebar
+      <article className="asst-card project-card">
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--asst-border)', paddingBottom: '12px', marginBottom: '12px' }}>
           <div className="card-info">
-            <h3 className="project-name">{project.name}</h3>
-            {/* 🎯 T() para el texto de fecha */}
-            <div className="project-date">
+            <h3 className="project-name" style={{ fontSize: '1.2em', margin: '0 0 6px', fontWeight: 'bold', color: 'var(--asst-primary)' }}>{project.name}</h3>
+            <div className="project-date" style={{ fontSize: '0.85em', color: 'var(--asst-muted)', marginBottom: '8px' }}>
               {T("LAST_MODIFIED", "Última modificación: ")} {formattedDate}
             </div>
-            <div className="project-badges">
-              <span className="badge">
+            <div className="project-badges" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {/* 🎯 Usamos asst-btn para el estilo de badge/tag */}
+              <span className="asst-btn" style={{ fontSize: '0.75em', padding: '4px 8px', background: 'var(--asst-surface-2)', border: '1px solid var(--asst-border)' }}>
                 {(project.methodology || "N/A").toUpperCase()}
               </span>
-              <span className="badge">{project.stage || "N/A"}</span>
+              <span className="asst-btn" style={{ fontSize: '0.75em', padding: '4px 8px', background: 'var(--asst-surface-2)', border: '1px solid var(--asst-border)' }}>{project.stage || "N/A"}</span>
               {project.domain && (
-                <span className="badge subtle">{project.domain}</span>
+                <span className="asst-btn" style={{ fontSize: '0.75em', padding: '4px 8px', background: 'transparent', color: 'var(--asst-muted)' }}>{project.domain}</span>
               )}
             </div>
           </div>
 
-          <div className="card-actions">
-            {/* 🎯 T() en botones de acción */}
-            <button className="btn-ghost" onClick={handleEdit}>
-              {T("WIZARD_BTN_EDIT", "📝 Editar en Wizard")}
+          <div className="card-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '150px' }}>
+            {/* 🎯 Usamos asst-btn.primary para el botón principal */}
+            <button className="asst-btn primary" onClick={handleOpen}>
+              💡 {T("ASSISTANT_BTN_OPEN", "Abrir en Asistente")}
             </button>
-            <button className="btn-ghost" onClick={handleOpen}>
-              {T("ASSISTANT_BTN_OPEN", "💡 Abrir en Asistente")}
+            {/* 🎯 Usamos asst-btn para botones secundarios */}
+            <button className="asst-btn" onClick={handleEdit}>
+              📝 {T("WIZARD_BTN_EDIT", "Editar en Wizard")}
             </button>
-            <button className="btn-ghost" onClick={handleDuplicateClick}>
-              {T("DUPLICATE_BTN", "📄 Duplicar")}
-            </button>
-            <button className="btn-danger" onClick={handleDeleteClick}>
-              {T("DELETE_BTN", "🗑️ Eliminar")}
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+              <button className="asst-btn" onClick={handleDuplicateClick} style={{ flex: 1 }}>
+                📄 {T("DUPLICATE_BTN", "Duplicar")}
+              </button>
+              {/* Usamos un estilo directo para danger, ya que asst-btn no tiene .danger */}
+              <button style={{ background: '#dc2626', color: '#fff' }} className="asst-btn" onClick={handleDeleteClick}>
+                🗑️ {T("DELETE_BTN", "Eliminar")}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Muestra las plantillas */}
         {(project.templates || []).length > 0 && (
           <div className="card-templates">
-            <div className="muted template-title">
-              {/* 🎯 T() en el título de plantillas */}
+            <div className="muted template-title" style={{ fontWeight: 'bold', color: 'var(--asst-muted)' }}>
               {T("TEMPLATES_TITLE", "Plantillas")} ({project.templates.length})
             </div>
-            <ul className="template-list">
+            <ul className="template-list" style={{ listStyle: 'none', padding: 0, display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
               {(project.templates || []).slice(0, 5).map((t, index) => (
-                // Usar index como fallback para key si 't.name' no es único
-                <li key={t.name || index} className="template-item">
+                // 🎯 Usamos el estilo asst-btn para los ítems de plantilla
+                <li key={t.name || index} className="asst-btn" style={{ padding: '6px 10px', fontSize: '0.8em', background: 'var(--asst-surface-2)', border: '1px solid var(--asst-border)' }}>
                   {t.name}
                 </li>
               ))}
               {remainingTemplates > 0 && (
-                <li className="template-item muted">
-                  {/* 🎯 T() en el texto de "X más" */}
+                <li className="asst-btn muted" style={{ padding: '6px 10px', fontSize: '0.8em', background: 'transparent', color: 'var(--asst-muted)', border: 'none' }}>
                   {moreTemplatesText}
                 </li>
               )}
@@ -184,155 +172,155 @@ const ProjectCard = React.memo(
 );
 
 // -------------------------------------------------------------
-// Componente Principal: DashBoard
+// Componente Principal: DashBoard (CLASES MODERNIZADAS)
 // -------------------------------------------------------------
 
 export default function DashBoard() {
-  const [projects, setProjects] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [language, setLanguage] = useState("es"); // 🎯 Nuevo estado para el idioma
-  const navigate = useNavigate();
+  const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [language, setLanguage] = useState("es");
+  const [theme, setTheme] = useState("ink"); // 🎯 Nuevo estado para el tema
+  const navigate = useNavigate();
 
-  // 🎯 FUNCIÓN T QUE TRADUCE (usa el estado 'language')
-  const T = (key, fallback = key) => {
-      // Si la clave no está definida o el idioma no existe, devuelve el fallback
-      if (!translations[language] || !translations[language][key]) return fallback;
-      return translations[language][key];
-  };
+  const T = useCallback((key, fallback = key) => {
+      if (!translations[language] || !translations[language][key]) return fallback;
+      return translations[language][key];
+  }, [language]); 
 
-  // Carga inicial de proyectos y configuración de idioma
-  useEffect(() => {
-    setIsLoading(true);
-    // 🎯 Cargar el idioma desde las preferencias del asistente (si existe)
-    setLanguage(getLanguage()); 
-    setProjects(projectStore.get());
-    setIsLoading(false);
-  }, []);
+  // Carga inicial de proyectos, configuración de idioma y tema
+  useEffect(() => {
+    setIsLoading(true);
+    const prefs = loadAssistantPrefs();
+    setLanguage(prefs.language);
+    setTheme(prefs.theme); // 🎯 Cargar el tema
+    setProjects(projectStore.get());
+    setIsLoading(false);
+  }, []);
 
-  // Handlers
-  const handleDelete = useCallback((id) => {
-    // 🎯 T() en el alert
-    if (!window.confirm(T("DELETE_CONFIRM", "¿Estás seguro de que quieres eliminar este proyecto?")))
-      return;
-    const updatedList = projectStore.remove(id);
-    setProjects(updatedList);
-  }, [T]); // 🎯 Añade T a las dependencias si se usa en useCallback/useMemo
+  // Handlers (SIN CAMBIOS ESTRUCTURALES)
+  const handleDelete = useCallback((id) => {
+    if (!window.confirm(T("DELETE_CONFIRM", "¿Estás seguro de que quieres eliminar este proyecto?")))
+      return;
+    const updatedList = projectStore.remove(id);
+    setProjects(updatedList);
+  }, [T]); 
 
-  const handleDuplicate = useCallback((id) => {
-    const list = projectStore.get();
-    const projectToDuplicate = list.find((x) => x.id === id);
+  const handleDuplicate = useCallback((id) => {
+    const list = projectStore.get();
+    const projectToDuplicate = list.find((x) => x.id === id);
 
-    if (!projectToDuplicate) {
-      console.warn(`Proyecto con ID ${id} no encontrado para duplicar.`);
-      return;
-    }
+    if (!projectToDuplicate) {
+      console.warn(`Proyecto con ID ${id} no encontrado para duplicar.`);
+      return;
+    }
 
-    const cloned = {
-      ...projectToDuplicate,
-      id: generateUniqueId(),
-      // 🎯 T() en el sufijo de copia
-      name: `${projectToDuplicate.name}${T("DUPLICATE_SUFFIX", " (copia)")}`,
-      createdAt: Date.now(), // Actualiza la fecha de creación/modificación
-    };
+    const cloned = {
+      ...projectToDuplicate,
+      id: generateUniqueId(),
+      name: `${projectToDuplicate.name}${T("DUPLICATE_SUFFIX", " (copia)")}`,
+      createdAt: Date.now(), 
+    };
 
-    // Agrega el proyecto duplicado y reordena
-    const updated = [cloned, ...list];
-    projectStore.set(updated);
-    setProjects(updated);
-  }, [T]); // 🎯 Añade T a las dependencias
+    const updated = [cloned, ...list];
+    projectStore.set(updated);
+    setProjects(updated);
+  }, [T]); 
 
-  const handleOpenInAssistant = useCallback(
-    (p) => {
-      // Usando URLSearchParams para un manejo limpio de query strings
-      const params = new URLSearchParams({
-        standard: p.methodology || "",
-        phase: p.stage || "",
-        domain: p.domain || "",
-      });
-      navigate(`/assistant?${params.toString()}`);
-    },
-    [navigate]
-  );
+  const handleOpenInAssistant = useCallback(
+    (p) => {
+      const params = new URLSearchParams({
+        standard: p.methodology || "",
+        phase: p.stage || "",
+        domain: p.domain || "",
+      });
+      navigate(`/assistant?${params.toString()}`);
+    },
+    [navigate]
+  );
 
-  const handleEditInWizard = useCallback(
-    (id) => {
-      navigate(`/wizard?id=${id}`);
-    },
-    [navigate]
-  );
+  const handleEditInWizard = useCallback(
+    (id) => {
+      navigate(`/wizard?id=${id}`);
+    },
+    [navigate]
+  );
 
-  // Contenido dinámico (memoizado)
-  const content = useMemo(() => {
-    if (isLoading) {
-      return (
-        <div className="panel loading-state">
-          {/* 🎯 T() en el mensaje de carga */}
-          {T("LOADING_MSG", "Cargando proyectos... ⏳")}
-        </div>
-      );
-    }
+  // Contenido dinámico (memoizado)
+  const content = useMemo(() => {
+    if (isLoading) {
+      return (
+        // 🎯 Usamos asst-card para la carga
+        <div className="asst-card loading-state" style={{ padding: '20px', textAlign: 'center' }}>
+          <div className="asst-side-title">{T("LOADING_MSG", "Cargando proyectos... ⏳")}</div>
+        </div>
+      );
+    }
 
-    if (projects.length === 0) {
-      return (
-        <div className="panel empty-state">
-          {/* 🎯 T() en el estado vacío */}
-          <div className="side-title">{T("EMPTY_TITLE", "Aún no tienes proyectos 😔")}</div>
-          <p className="muted">
-            {/* 🎯 T() en el cuerpo del estado vacío */}
-            {T("EMPTY_BODY_1", "Crea uno desde el")}{" "}
-            <Link to="/wizard">Wizard</Link> {T("EMPTY_BODY_2", "o usa el")}{" "}
-            <Link to="/assistant">Asistente</Link> {T("EMPTY_BODY_3", "y guarda como proyecto.")}
-          </p>
-        </div>
-      );
-    }
+    if (projects.length === 0) {
+      return (
+        // 🎯 Usamos asst-card para el estado vacío
+        <div className="asst-card empty-state" style={{ padding: '30px', textAlign: 'center' }}>
+          <div className="asst-side-title" style={{ fontSize: '1.2em' }}>{T("EMPTY_TITLE", "Aún no tienes proyectos 😔")}</div>
+          <p className="muted" style={{ color: 'var(--asst-muted)' }}>
+            {T("EMPTY_BODY_1", "Crea uno desde el")}{" "}
+            <Link to="/wizard" style={{ color: 'var(--asst-primary)' }}>Wizard</Link> {T("EMPTY_BODY_2", "o usa el")}{" "}
+            <Link to="/assistant" style={{ color: 'var(--asst-primary)' }}>Asistente</Link> {T("EMPTY_BODY_3", "y guarda como proyecto.")}
+          </p>
+        </div>
+      );
+    }
 
-    return (
-      <div className="cards">
-        {projects.map((p) => (
-          <ProjectCard
-            key={p.id}
-            project={p}
-            onDuplicate={handleDuplicate}
-            onDelete={handleDelete}
-            onEditInWizard={handleEditInWizard}
-            onOpenInAssistant={handleOpenInAssistant}
-            T={T} // 🎯 PASAMOS LA FUNCIÓN T A ProjectCard
-          />
-        ))}
-      </div>
-    );
-  }, [
-    isLoading,
-    projects,
-    handleDelete,
-    handleDuplicate,
-    handleEditInWizard,
-    handleOpenInAssistant,
-    T, // 🎯 Añade T a las dependencias
-  ]);
+    return (
+      // 🎯 Grid para las tarjetas de proyectos
+      <div className="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', padding: '20px 0' }}>
+        {projects.map((p) => (
+          <ProjectCard
+            key={p.id}
+            project={p}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
+            onEditInWizard={handleEditInWizard}
+            onOpenInAssistant={handleOpenInAssistant}
+            T={T}
+          />
+        ))}
+      </div>
+    );
+  }, [
+    isLoading,
+    projects,
+    handleDelete,
+    handleDuplicate,
+    handleEditInWizard,
+    handleOpenInAssistant,
+    T,
+  ]);
 
-  return (
-    <main className="dashboard">
-      <div className="assistant-wrap">
-        <header className="appbar dashboard-header">
-          <div className="appbar-left">
-            <h1 className="appbar-title">
-              <span role="img" aria-label="folder">
-                📂
-              </span>{" "}
-              {/* 🎯 T() en el título de la app */}
-              {T("APP_TITLE", "Tus proyectos")}
-            </h1>
-          </div>
-          <Link to="/wizard" className="appbar-btn primary-btn">
-            {/* 🎯 T() en el botón de nuevo proyecto */}
-            {T("NEW_PROJECT_BTN", "✨ Nuevo Proyecto")}
-          </Link>
-        </header>
+  return (
+    // 🎯 Usamos assistant-screen y data-theme
+    <main className="assistant-screen" data-theme={theme}>
+      {/* 🎯 Usamos asst-appbar para la cabecera */}
+      <div className="asst-appbar">
+        <div className="asst-appbar-left" style={{ display: "flex", gap: 12 }}>
+          <h1 className="asst-appbar-title">
+            <span role="img" aria-label="folder">
+              📂
+            </span>{" "}
+            {T("APP_TITLE", "Tus proyectos")}
+          </h1>
+        </div>
+        <div className="asst-appbar-actions" style={{ display: "flex", gap: 8 }}>
+          <Link to="/wizard" className="asst-appbar-btn" style={{ background: 'var(--asst-primary)', color: '#111' }}>
+            {T("NEW_PROJECT_BTN", "✨ Nuevo Proyecto")}
+          </Link>
+          <AuthButton logoutRedirectTo="/login" /> {/* Agregamos AuthButton para consistencia */}
+        </div>
+      </div>
 
-        {content}
-      </div>
-    </main>
-  );
+      {/* 🎯 Usamos asst-wrap para centrar el contenido y aplicar el máximo ancho */}
+      <div className="asst-wrap" style={{ gridTemplateColumns: '1fr', maxWidth: '1200px', margin: '0 auto' }}>
+        {content}
+      </div>
+    </main>
+  );
 }
