@@ -1,3 +1,4 @@
+// src/components/AuthButton.jsx
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -69,13 +70,19 @@ function initialsFrom(user) {
     user?.email?.[0] ||
     "";
   const b =
-    user?.last_name || user?.lastName || user?.full_name?.split(" ")?.[1] || "";
+    user?.last_name ||
+    user?.lastName ||
+    user?.full_name?.split(" ")?.[1] ||
+    "";
   const s = `${a}`.trim().charAt(0) + `${b}`.trim().charAt(0);
   return s.toUpperCase() || "U";
 }
 
 // === COMPONENTE PRINCIPAL ===
-export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig }) {
+export default function AuthButton({
+  logoutRedirectTo = "/login",
+  refreshConfig,
+}) {
   const { user, token, loading, logout } = useAuth();
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
@@ -123,10 +130,26 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
     setShowConfig(false);
   };
 
+  // Nombre corto para el pill del header (primer nombre)
   const label = useMemo(() => {
     if (!user) return "";
-    const first = user.first_name || user.firstName || user.full_name || user.email;
+    const first =
+      user.first_name || user.firstName || user.full_name || user.email;
     return String(first).split(" ")[0] || "";
+  }, [user]);
+
+  // Nombre "bonito" para mostrar en el menú (nombre completo o parte local del email)
+  const displayName = useMemo(() => {
+    if (!user) return "";
+    const full =
+      [user.first_name || user.firstName, user.last_name || user.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    if (full) return full;
+    if (user.full_name) return user.full_name;
+    if (user.email) return user.email.split("@")[0];
+    return "";
   }, [user]);
 
   if (loading)
@@ -144,6 +167,7 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
       </div>
     );
 
+  // Sin sesión -> botones Ingresar / Crear cuenta
   if (!token)
     return (
       <div style={{ display: "flex", gap: 8 }}>
@@ -160,6 +184,7 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
 
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
+      {/* Botón del header (pill con avatar + primer nombre) */}
       <button
         onClick={() => setOpen((v) => !v)}
         title={user?.email}
@@ -171,7 +196,7 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
           color: "#e5e7eb",
           border: "1px solid rgba(255,255,255,.18)",
           padding: "6px 10px",
-          borderRadius: 12,
+          borderRadius: 999,
           cursor: "pointer",
           fontWeight: 600,
         }}
@@ -203,12 +228,20 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
           )}
         </div>
 
-        <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span
+          style={{
+            maxWidth: 120,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {label}
         </span>
         <span aria-hidden>▾</span>
       </button>
 
+      {/* Menú desplegable */}
       {open && (
         <div
           role="menu"
@@ -216,7 +249,7 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
             position: "absolute",
             right: 0,
             top: "110%",
-            minWidth: 220,
+            minWidth: 240,
             background: "#15151a",
             border: "1px solid rgba(255,255,255,.12)",
             borderRadius: 12,
@@ -226,6 +259,7 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
             zIndex: 20,
           }}
         >
+          {/* Header del menú: avatar + nombre + correo */}
           <div
             style={{
               padding: "8px 10px",
@@ -240,13 +274,13 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
             <div
               aria-hidden
               style={{
-                width: 20,
-                height: 20,
+                width: 28,
+                height: 28,
                 borderRadius: "50%",
                 background: "#111318",
                 display: "grid",
                 placeItems: "center",
-                fontSize: 10,
+                fontSize: 11,
                 border: "1px solid rgba(255,255,255,.2)",
                 overflow: "hidden",
               }}
@@ -263,23 +297,72 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
                 initialsFrom(user)
               )}
             </div>
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{user?.email}</span>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              {displayName && (
+                <span
+                  style={{
+                    color: "#e5e7eb",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {displayName}
+                </span>
+              )}
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user?.email}
+              </span>
+            </div>
           </div>
 
-          <button onClick={() => { setOpen(false); nav("/Assistant"); }} style={menuButtonStyle}>
+          <button
+            onClick={() => {
+              setOpen(false);
+              nav("/Assistant");
+            }}
+            style={menuButtonStyle}
+          >
             {t.account}
           </button>
 
-          <button onClick={() => { setOpen(false); setShowConfig(true); }} style={menuButtonStyle}>
+          <button
+            onClick={() => {
+              setOpen(false);
+              setShowConfig(true);
+            }}
+            style={menuButtonStyle}
+          >
             ⚙️ {t.settings}
           </button>
 
-          <button onClick={() => { setOpen(false); logout({ redirectTo: logoutRedirectTo }); }} style={{ ...menuButtonStyle, color: "#ef4444" }}>
+          <button
+            onClick={() => {
+              setOpen(false);
+              logout({ redirectTo: logoutRedirectTo });
+            }}
+            style={{ ...menuButtonStyle, color: "#ef4444" }}
+          >
             {t.logout}
           </button>
         </div>
       )}
 
+      {/* Modal de configuración del asistente */}
       {showConfig && (
         <div
           style={{
@@ -310,9 +393,29 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.1)", paddingBottom: 16, marginBottom: 16 }}>
-              <h3 style={{ margin: 0, color: "#e5e7eb" }}>{t.preferencesTitle}</h3>
-              <button onClick={() => setShowConfig(false)} style={{ border: 0, background: "transparent", color: "#9ca3af", fontSize: 18, cursor: "pointer" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderBottom: "1px solid rgba(255,255,255,.1)",
+                paddingBottom: 16,
+                marginBottom: 16,
+              }}
+            >
+              <h3 style={{ margin: 0, color: "#e5e7eb" }}>
+                {t.preferencesTitle}
+              </h3>
+              <button
+                onClick={() => setShowConfig(false)}
+                style={{
+                  border: 0,
+                  background: "transparent",
+                  color: "#9ca3af",
+                  fontSize: 18,
+                  cursor: "pointer",
+                }}
+              >
                 ✕
               </button>
             </div>
@@ -320,7 +423,11 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
             <div style={{ display: "grid", gap: 16 }}>
               <div style={{ display: "grid", gap: 4 }}>
                 <label style={labelStyle}>{t.chatFontSize}</label>
-                <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} style={selectStyle}>
+                <select
+                  value={fontSize}
+                  onChange={(e) => setFontSize(e.target.value)}
+                  style={selectStyle}
+                >
                   <option value="small">Pequeño (Compacto)</option>
                   <option value="medium">Mediano (Estándar)</option>
                   <option value="large">Grande (Accesible)</option>
@@ -329,7 +436,11 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
 
               <div style={{ display: "grid", gap: 4 }}>
                 <label style={labelStyle}>{t.interfaceLanguage}</label>
-                <select value={language} onChange={(e) => setLanguage(e.target.value)} style={selectStyle}>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  style={selectStyle}
+                >
                   <option value="es">Español 🇪🇸</option>
                   <option value="en">English 🇬🇧</option>
                 </select>
@@ -343,24 +454,43 @@ export default function AuthButton({ logoutRedirectTo = "/login", refreshConfig 
 
               <div style={{ display: "grid", gap: 4 }}>
                 <label style={labelStyle}>{t.responseStyle}</label>
-                <select value={assistantStyle} onChange={(e) => setAssistantStyle(e.target.value)} style={selectStyle}>
+                <select
+                  value={assistantStyle}
+                  onChange={(e) => setAssistantStyle(e.target.value)}
+                  style={selectStyle}
+                >
                   <option value="compacto">Compacto</option>
                   <option value="detallado">Detallado</option>
                 </select>
               </div>
 
               <label style={checkboxLabelStyle}>
-                <input type="checkbox" checked={showEmojis} onChange={(e) => setShowEmojis(e.target.checked)} style={checkboxInputStyle} />
+                <input
+                  type="checkbox"
+                  checked={showEmojis}
+                  onChange={(e) => setShowEmojis(e.target.checked)}
+                  style={checkboxInputStyle}
+                />
                 {t.showEmojis}
               </label>
 
               <label style={checkboxLabelStyle}>
-                <input type="checkbox" checked={showTimestamps} onChange={(e) => setShowTimestamps(e.target.checked)} style={checkboxInputStyle} />
+                <input
+                  type="checkbox"
+                  checked={showTimestamps}
+                  onChange={(e) => setShowTimestamps(e.target.checked)}
+                  style={checkboxInputStyle}
+                />
                 {t.showTimestamps}
               </label>
 
               <label style={checkboxLabelStyle}>
-                <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} style={checkboxInputStyle} />
+                <input
+                  type="checkbox"
+                  checked={autoScroll}
+                  onChange={(e) => setAutoScroll(e.target.checked)}
+                  style={checkboxInputStyle}
+                />
                 {t.enableAutoscroll}
               </label>
 
@@ -386,7 +516,11 @@ const menuButtonStyle = {
   cursor: "pointer",
 };
 
-const labelStyle = { color: "#e5e7eb", fontSize: 14, fontWeight: 500 };
+const labelStyle = {
+  color: "#e5e7eb",
+  fontSize: 14,
+  fontWeight: 500,
+};
 const selectStyle = {
   padding: "8px 10px",
   borderRadius: 8,
@@ -396,7 +530,14 @@ const selectStyle = {
   fontSize: 14,
   cursor: "pointer",
 };
-const checkboxLabelStyle = { display: "flex", alignItems: "center", gap: 8, color: "#e5e7eb", fontSize: 14, cursor: "pointer" };
+const checkboxLabelStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  color: "#e5e7eb",
+  fontSize: 14,
+  cursor: "pointer",
+};
 const checkboxInputStyle = { width: 16, height: 16 };
 const saveButtonStyle = {
   padding: "10px 16px",

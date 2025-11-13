@@ -26,3 +26,17 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS first_name text,
   ADD COLUMN IF NOT EXISTS last_name  text,
   ADD COLUMN IF NOT EXISTS theme      text NOT NULL DEFAULT 'ink';
+
+
+-- ✅ Añade SOLO lo necesario; no toca tu esquema local de login
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS email_verified        BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS provider              TEXT DEFAULT 'local',
+  ADD COLUMN IF NOT EXISTS provider_id           TEXT,
+  ADD COLUMN IF NOT EXISTS name                  TEXT,
+  ADD COLUMN IF NOT EXISTS picture               TEXT,
+  ADD COLUMN IF NOT EXISTS verify_token          TEXT,
+  ADD COLUMN IF NOT EXISTS verify_token_expires  TIMESTAMPTZ;
+
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON public.users (email);
+CREATE INDEX IF NOT EXISTS users_provider_idx ON public.users (provider, provider_id);

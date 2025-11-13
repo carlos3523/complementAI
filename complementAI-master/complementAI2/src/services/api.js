@@ -1,5 +1,7 @@
 // src/services/api.js
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+// URL base de tu backend (sin /api al final)
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 function authHeader() {
   const token = localStorage.getItem("token");
@@ -34,8 +36,8 @@ async function handle(res) {
 async function request(url, options = {}) {
   try {
     return await fetch(url, options);
-  } catch (err) {
-    // TypeError de fetch típicamente = CORS, servidor caído, URL inválida, mixed content, etc.
+  } catch (_err) {
+    // TypeError de fetch típicamente = CORS, servidor caído, URL inválida, etc.
     throw new Error(
       "No se pudo conectar con el servidor. Verifica que la API esté activa, el puerto y CORS."
     );

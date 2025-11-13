@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pkg from "pg";
+import "./src/index.js";
 
 // PostgreSQL
 const { Pool } = pkg;
