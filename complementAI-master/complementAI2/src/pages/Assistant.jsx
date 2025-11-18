@@ -108,6 +108,59 @@ function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
   );
 }
 
+  function SpeechButton({ message, speak, synthRef }) {
+    // Usamos el ID del mensaje para saber qué mensaje se está reproduciendo.
+    // Esto asegura que solo el botón del mensaje activo sepa su estado.
+    const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
+
+    const handleSpeak = () => {
+        if (!isSpeakingLocal) {
+            // Detenemos cualquier reproducción anterior antes de empezar una nueva.
+            // Esto es crucial para que el botón se reactive.
+            synthRef.current.cancel(); 
+
+            const utter = new SpeechSynthesisUtterance(message.text);
+            utter.lang = window.navigator.language || 'es-ES';
+            utter.rate = 1;
+            utter.pitch = 1;
+            
+            // 💡 Cuando empieza a hablar, actualiza el estado local
+            utter.onstart = () => setIsSpeakingLocal(true); 
+            
+            // 💡 Cuando termina o es cancelado, actualiza el estado local
+            utter.onend = () => setIsSpeakingLocal(false); 
+            utter.onpause = () => setIsSpeakingLocal(false);
+            utter.onresume = () => setIsSpeakingLocal(true);
+            
+            synthRef.current.speak(utter);
+        } else {
+            // Si ya está hablando (isSpeakingLocal es true), cancela
+            synthRef.current.cancel();
+            setIsSpeakingLocal(false);
+        }
+    };
+
+    return (
+        <button
+            className="asst-speak-btn"
+            onClick={handleSpeak}
+            title={isSpeakingLocal ? "Detener voz" : "Reproducir voz"}
+            // El botón ya no se deshabilita globalmente
+            style={{ 
+                marginLeft: '10px', 
+                fontSize: '1.2em', 
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer',
+                color: 'currentColor', // Hereda el color del texto
+                opacity: isSpeakingLocal ? 1 : 0.6 // Pequeño estilo para indicar estado
+            }}
+        >
+            {isSpeakingLocal ? "⏹️" : "🔊"}
+        </button>
+    );
+}
+
 /* ===============================
     Página principal
     =============================== */
@@ -214,11 +267,6 @@ export default function AssistantPage() {
     synthRef.current.speak(utter);
   };
 
-  useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.role === "assistant") speak(lastMsg.text);
-  }, [messages]);
-
   /* ===============================
       Persistencia e interacciones
       =============================== */
@@ -276,6 +324,8 @@ export default function AssistantPage() {
         ...conversationHistory.slice(1), 
         { role: "user", content: text },
       ]);
+      
+
       const aiMsg = {
         id: now() + 1,
         role: "assistant",
@@ -559,6 +609,7 @@ export default function AssistantPage() {
                       <div className={`asst-block ${isUser ? "me" : "ai"}`}>
                         <div className="asst-meta">{meta}</div> 
                         <div className="asst-content">{m.text}</div>
+                        {!isUser && <SpeechButton message={m} speak={speak} synthRef={synthRef} />}
                       </div>
                       {isUser && <div className="asst-avatar me" />}
                     </div>
@@ -624,13 +675,6 @@ export default function AssistantPage() {
                 >
                   <button onClick={toggleListening} title="Hablar">
                     {listening ? "🎙️ Grabando..." : "🎤"}
-                  </button>
-                  <button
-                    onClick={() => synthRef.current.cancel()}
-                    disabled={!speaking}
-                    title="Detener voz"
-                  >
-                    🔇
                   </button>
                   <button onClick={handleSend} disabled={loading}>
                     {loading ? t.sending : t.send}
