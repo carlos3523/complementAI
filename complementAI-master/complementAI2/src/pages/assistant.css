@@ -714,6 +714,9 @@
 .asst-offline {
     background-color: #6b728020; /* gris suave */
     color: #9ca3af;
+.asst-tooltip-wrap {
+  position: relative;
+  display: inline-block;
 }
 
 /* --- Lista de Estadísticas --- */
@@ -722,6 +725,14 @@
     list-style: none;
     padding: 0;
     margin: 0;
+.asst-tooltip-icon {
+  background: #2a3039;
+  border: 1px solid #394250;
+  color: #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .asst-stat-item {
@@ -731,15 +742,40 @@
     border-bottom: 1px solid var(--asst-border);
     font-size: 16px;
     color: var(--asst-muted);
+.asst-tooltip-icon:hover {
+  filter: brightness(1.2);
 }
 
 .asst-stat-item:last-child {
     border-bottom: none;
+/* --- FIX DEFINITIVO --- */
+/* Tooltip PEGADO al icono sin dejar huecos */
+.asst-tooltip-box {
+  position: absolute;
+  top: calc(100% - 1px); /* justo debajo del icono, sin GAP */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1b1b22;
+  border: 1px solid #333;
+  padding: 12px;
+  width: 220px;
+  border-radius: 10px;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  transform-origin: top;
+  z-index: 999;
 }
 
 .asst-stat-item strong {
     color: var(--asst-text);
     font-weight: 700;
+/* Mostrar al hacer hover */
+.asst-tooltip-wrap:hover .asst-tooltip-box {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(4px); /* animación suave hacia abajo */
 }
 
 /* --- Caja de Registro Reciente --- */
@@ -751,6 +787,10 @@
     padding: 12px;
     max-height: 250px;
     overflow-y: auto;
+.asst-tooltip-text {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #e5e7eb;
 }
 
 .asst-log-item {
@@ -759,14 +799,29 @@
     padding: 6px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     color: var(--asst-muted);
+.asst-tooltip-button {
+  background: #7c3aed;
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
 }
 
 .asst-log-item:last-child {
     border-bottom: none;
+.asst-tooltip-button:hover {
+  background: #8b5cf6;
 }
 
 /* Destaca la marca de tiempo y el evento */
 .asst-log-item::before {
     content: attr(data-log-type); /* Si alguna vez añades atributos */
     color: var(--asst-primary);
+.asst-tooltip-box.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }

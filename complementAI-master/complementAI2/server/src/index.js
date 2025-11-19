@@ -1,4 +1,5 @@
 // server/src/index.js
+// Servidor principal estable y compatible con Webpay
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -28,7 +29,7 @@ app.use(
 app.options("*", cors());
 
 /* =========================
-   Healthcheck
+   Rutas base
    ========================= */
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
@@ -37,13 +38,28 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
    ========================= */
 app.use("/api/auth", auth);
 app.use("/api/projects", requireAuth, projects);
+// Auth
+if (auth) app.use("/api/auth", auth);
+else console.warn("⚠️ /api/auth no cargó.");
+
+// Projects
+if (projects) app.use("/api/projects", projects);
+else console.warn("⚠️ /api/projects no cargó.");
+
+// Payments (Webpay)
+if (payments) {
+  app.use("/api/payments", payments);
+  console.log("✅ /api/payments registrado y activo");
+} else {
+  console.warn("⚠️ /api/payments deshabilitado");
+}
 
 /* =========================
-   Chat (OpenRouter)  ->  devuelve { content }
+   Chat (simulado)
    ========================= */
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, model: rawModel } = req.body || {};
+    const { messages } = req.body || {};
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: "Faltan messages" });
     }
@@ -188,30 +204,24 @@ app.get("/api/user/me", requireAuth, async (req, res) => {
 });
 
 /* Opcional: debugea qué viene en el token */
-app.get("/api/debug/whoami", requireAuth, (req, res) => {
-  res.json({ userFromToken: req.user });
 });
 
-
 /* =========================
-   404 + Handler de errores
+   404 y errores
    ========================= */
 app.use((_req, res) => res.status(404).json({ error: "Not found" }));
-
 app.use((err, _req, res, _next) => {
   console.error("UNCAUGHT ERROR:", err);
   res.status(500).json({ error: "Error interno" });
 });
 
 /* =========================
-   Arranque
+   Arranque del servidor
    ========================= */
-const port = process.env.PORT || 4000;
+const port = Number(process.env.PORT || 4000);
 app.listen(port, () => {
   console.log(`API escuchando en http://localhost:${port}`);
 });
-// 🔻 Apagado limpio del servidor y del pool de PostgreSQL
-import { pool } from "./sql/db.js";
 
 process.on("SIGINT", async () => {
   console.log("\n🛑 Cerrando servidor…");
