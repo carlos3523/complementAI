@@ -8,10 +8,9 @@ import "./assistant.css";
 import { useLanguage } from "../contexts/LanguageContext";
 import { translations } from "../i18n/translations";
 
-
 /* ===============================
     Persistencia (localStorage)
-=============================== */
+    =============================== */
 const LS_THREADS = "asst_threads_v1";
 const now = () => Date.now();
 
@@ -45,14 +44,11 @@ const seedThread = () => ({
 
 /* ===============================
     HERO (landing)
-    NOTE: EmptyHero is self-contained
-=============================== */
+    =============================== */
 function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
   const { language } = useLanguage();
   const t = translations[language];
-  const navigate = useNavigate();
-
-  const [hoverInfo, setHoverInfo] = useState(false);
+  
 
   return (
     <div className="hero-shell">
@@ -75,6 +71,7 @@ function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
               return;
             }
 
+            // Tab y Shift+Tab
             if (e.key === "Tab") {
               e.preventDefault();
               const { selectionStart, selectionEnd, value } = e.target;
@@ -82,14 +79,16 @@ function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
               const after = value.substring(selectionEnd);
 
               if (e.shiftKey) {
-                if (before.endsWith("  ")) {
+                if (before.endsWith("  ")) {
                   e.target.value = before.slice(0, -2) + after;
                   e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
                 }
               } else {
-                e.target.value = before + "  " + after;
+                e.target.value = before + "  " + after;
                 e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
               }
+
+              // Mantener sincronizado el estado
               const event = new Event("input", { bubbles: true });
               e.target.dispatchEvent(event);
             }
@@ -105,55 +104,66 @@ function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
           </button>
         </div>
       </div>
-
-      {/* Tooltip con hover extendido */}
-      <div
-        style={{ marginTop: 12, display: "flex", justifyContent: "center" }}
-      >
-        <div
-          className="asst-tooltip-wrap hero-tooltip-wrap"
-          onMouseEnter={() => setHoverInfo(true)}
-          onMouseLeave={() => setHoverInfo(false)}
-        >
-          <button
-            className="asst-tooltip-icon"
-            type="button"
-            aria-label={t.help || "Ayuda"}
-            title={t.help || "Ayuda"}
-            onClick={(e) => e.preventDefault()}
-          >
-            ⓘ
-          </button>
-
-          <div
-            className={`asst-tooltip-box ${
-              hoverInfo ? "is-open" : ""
-            }`}
-            role="dialog"
-            aria-hidden={!hoverInfo}
-          >
-            <div className="asst-tooltip-text">
-              Aquí irá el mensaje del tooltip.
-            </div>
-
-            <button
-              className="asst-tooltip-button"
-              type="button"
-              onClick={() => navigate("/pago")}
-            >
-              Ir ahora
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
+  function SpeechButton({ message, speak, synthRef }) {
+    // Usamos el ID del mensaje para saber qué mensaje se está reproduciendo.
+    // Esto asegura que solo el botón del mensaje activo sepa su estado.
+    const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
+
+    const handleSpeak = () => {
+        if (!isSpeakingLocal) {
+            // Detenemos cualquier reproducción anterior antes de empezar una nueva.
+            // Esto es crucial para que el botón se reactive.
+            synthRef.current.cancel(); 
+
+            const utter = new SpeechSynthesisUtterance(message.text);
+            utter.lang = window.navigator.language || 'es-ES';
+            utter.rate = 1;
+            utter.pitch = 1;
+            
+            // 💡 Cuando empieza a hablar, actualiza el estado local
+            utter.onstart = () => setIsSpeakingLocal(true); 
+            
+            // 💡 Cuando termina o es cancelado, actualiza el estado local
+            utter.onend = () => setIsSpeakingLocal(false); 
+            utter.onpause = () => setIsSpeakingLocal(false);
+            utter.onresume = () => setIsSpeakingLocal(true);
+            
+            synthRef.current.speak(utter);
+        } else {
+            // Si ya está hablando (isSpeakingLocal es true), cancela
+            synthRef.current.cancel();
+            setIsSpeakingLocal(false);
+        }
+    };
+
+    return (
+        <button
+            className="asst-speak-btn"
+            onClick={handleSpeak}
+            title={isSpeakingLocal ? "Detener voz" : "Reproducir voz"}
+            // El botón ya no se deshabilita globalmente
+            style={{ 
+                marginLeft: '10px', 
+                fontSize: '1.2em', 
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer',
+                color: 'currentColor', // Hereda el color del texto
+                opacity: isSpeakingLocal ? 1 : 0.6 // Pequeño estilo para indicar estado
+            }}
+        >
+            {isSpeakingLocal ? "⏹️" : "🔊"}
+        </button>
+    );
+}
 
 /* ===============================
     Página principal
-=============================== */
+    =============================== */
 export default function AssistantPage() {
   const { user, token } = useAuth();
   const { language } = useLanguage();
@@ -176,16 +186,16 @@ export default function AssistantPage() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     return saved.length ? saved : [seedThread()];
   });
-  const [currentId, setCurrentId] = useState(threads[0]?.id || seedThread().id);
+  const [currentId, setCurrentId] = useState(threads[0].id);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
   const [fontSize, setFontSize] = useState("medium");
-  const [showTimestamps, setShowTimestamps] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState(true); 
   const [autoScroll, setAutoScroll] = useState(true); // 👈 NUEVO ESTADO para auto-scroll
 
   const current = threads.find((t) => t.id === currentId) || threads[0];
-  const [messages, setMessages] = useState(current.messages || []);
+  const [messages, setMessages] = useState(current.messages);
   const endRef = useRef(null);
 
   const hasUserMsgs = messages.some((m) => m.role === "user");
@@ -203,9 +213,10 @@ export default function AssistantPage() {
     refreshConfig();
   }, []);
 
+
   /* ===============================
       VOZ: Lectura y reconocimiento
-  =============================== */
+      =============================== */
   const [speaking, setSpeaking] = useState(false);
   const synthRef = useRef(window.speechSynthesis);
 
@@ -256,14 +267,9 @@ export default function AssistantPage() {
     synthRef.current.speak(utter);
   };
 
-  useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.role === "assistant") speak(lastMsg.text);
-  }, [messages]);
-
   /* ===============================
       Persistencia e interacciones
-  =============================== */
+      =============================== */
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     setThreads(saved.length ? saved : [seedThread()]);
@@ -291,7 +297,7 @@ export default function AssistantPage() {
   }, [messages, loading, autoScroll]); // Depende de messages, loading y autoScroll
 
   function smartTitleFrom(text) {
-    const oneLine = text.replace(/\s+/g, " ").trim(); // FIX: normalizo espacios
+    const oneLine = text.replace(/\s+/g, " ").trim();
     const first = oneLine.split(/[.!?]|$/)[0].trim();
     return (first || oneLine).slice(0, 60) || t.untitled;
   }
@@ -315,9 +321,11 @@ export default function AssistantPage() {
 
       const responseText = await chat([
         { role: "system", content: "You are ComplementAI, a project assistant." },
-        ...conversationHistory.slice(1),
+        ...conversationHistory.slice(1), 
         { role: "user", content: text },
       ]);
+      
+
       const aiMsg = {
         id: now() + 1,
         role: "assistant",
@@ -384,12 +392,12 @@ export default function AssistantPage() {
 
   /* ===============================
       Render principal
-  =============================== */
+      =============================== */
   return (
     <main
       className={`assistant-screen ${sidebarOpen ? "" : "is-collapsed"}`}
       data-theme={theme}
-      data-font-size={fontSize}
+      data-font-size={fontSize} 
     >
       {/* Appbar */}
       <div className="asst-appbar">
@@ -578,7 +586,7 @@ export default function AssistantPage() {
               <div className="assistant-chat" data-font-size={fontSize}>
                 {messages.map((m) => {
                   const isUser = m.role === "user";
-
+                  
                   // Lógica para incluir/excluir marca de tiempo
                   const timeString = showTimestamps
                     ? new Date(m.ts).toLocaleTimeString([], {
@@ -586,7 +594,7 @@ export default function AssistantPage() {
                         minute: "2-digit",
                       })
                     : "";
-
+                  
                   // Crear la metadata condicionalmente
                   const meta = `${isUser ? "Tú" : t.projectAssistant}${
                     showTimestamps ? ` • ${timeString}` : ""
@@ -599,8 +607,9 @@ export default function AssistantPage() {
                     >
                       {!isUser && <div className="asst-avatar" />}
                       <div className={`asst-block ${isUser ? "me" : "ai"}`}>
-                        <div className="asst-meta">{meta}</div>
+                        <div className="asst-meta">{meta}</div> 
                         <div className="asst-content">{m.text}</div>
+                        {!isUser && <SpeechButton message={m} speak={speak} synthRef={synthRef} />}
                       </div>
                       {isUser && <div className="asst-avatar me" />}
                     </div>
@@ -639,15 +648,15 @@ export default function AssistantPage() {
                       e.preventDefault();
                       const { selectionStart, selectionEnd, value } = e.target;
                       const before = value.substring(0, selectionStart);
-                      const after = value.substring(selectionEnd);
+                      const after = value.substring(end);
 
                       if (e.shiftKey) {
-                        if (before.endsWith("  ")) {
+                        if (before.endsWith("  ")) {
                           e.target.value = before.slice(0, -2) + after;
                           e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
                         }
                       } else {
-                        e.target.value = before + "  " + after;
+                        e.target.value = before + "  " + after;
                         e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
                       }
 
@@ -667,52 +676,9 @@ export default function AssistantPage() {
                   <button onClick={toggleListening} title="Hablar">
                     {listening ? "🎙️ Grabando..." : "🎤"}
                   </button>
-                  <button
-                    onClick={() => synthRef.current.cancel()}
-                    disabled={!speaking}
-                    title="Detener voz"
-                  >
-                    🔇
-                  </button>
-
                   <button onClick={handleSend} disabled={loading}>
                     {loading ? t.sending : t.send}
                   </button>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 8, display: "flex", justifyContent: "center" }}>
-                <div
-                  style={{ marginTop: 8, display: "flex", justifyContent: "center" }}
-                >
-                  <div
-                    className="asst-tooltip-wrap"
-                    onMouseEnter={() => setHoverInfo(true)}
-                    onMouseLeave={() => setHoverInfo(false)}
-                  >
-                    <button
-                      className="asst-tooltip-icon asst-tooltip-premium"
-                      type="button"
-                      onClick={(e) => e.preventDefault()}
-                    >
-                      Actualiza a premium
-                    </button>
-
-                    <div
-                      className={`asst-tooltip-box ${hoverInfo ? "is-open" : ""}`}
-                      role="dialog"
-                      aria-hidden={!hoverInfo}
-                    >
-                      <div className="asst-tooltip-text">Aquí irá el mensaje del tooltip.</div>
-                      <button
-                        className="asst-tooltip-button"
-                        type="button"
-                        onClick={() => window.open("/upgrade", "_blank")}
-                      >
-                        Ir ahora
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
             </>
