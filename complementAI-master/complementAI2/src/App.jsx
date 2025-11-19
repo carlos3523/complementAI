@@ -8,8 +8,9 @@ import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
 import Progreso from "./pages/Progreso.jsx";
+import Pago from "./pages/Pago.jsx";
+import ConfirmacionPago from "./pages/ConfirmacionPago.jsx";
 import VerifyEmailSuccess from "./pages/VerifyEmailSuccess.jsx";
-
 import SuperAdminVisual from "./pages/SuperAdminVisual.jsx";
 import AdminVisual from "./pages/AdminVisual.jsx";
 import ModeratorVisual from "./pages/ModeratorVisual.jsx";
@@ -23,18 +24,21 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/assistant" element={<Assistant />} />
+      <Route path="/pago" element={<Pago />} />
       <Route path="/superadmin" element={<SuperAdminVisual />} />
       <Route path="/admin" element={<AdminVisual />} />
       <Route path="/moderator" element={<ModeratorVisual />} />
+      <Route path="/pago-confirmado" element={<ConfirmacionPago />} />
 
-      {/* GMAIL VERIFICAION */}
+            {/* GMAIL VERIFICAION */}
       <Route path="/verify-email-success" element={<VerifyEmailSuccess />} />
 
-      {/* privadas */}
+      {/* privadas (bloque con Outlet) */}
+      
       <Route element={<ProtectedRoute />}>
         <Route path="/wizard" element={<Wizard />} />
         <Route path="/dashboard" element={<DashBoard />} />
-        <Route path="/progreso" element={<Progreso />} />
+        <Route path="/Progreso" element={<Progreso />} />
       </Route>
 
       {/* fallback */}
