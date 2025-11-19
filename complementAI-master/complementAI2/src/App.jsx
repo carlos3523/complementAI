@@ -8,11 +8,14 @@ import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
 import Progreso from "./pages/Progreso.jsx";
+
 import SuperAdminVisual from "./pages/SuperAdminVisual.jsx";
 import AdminVisual from "./pages/AdminVisual.jsx";
 import ModeratorVisual from "./pages/ModeratorVisual.jsx";
 import Pago from "./pages/Pago.jsx";
 import ConfirmacionPago from "./pages/ConfirmacionPago.jsx";
+import VerifyEmailSuccess from "./pages/VerifyEmailSuccess.jsx";
+
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
@@ -30,11 +33,14 @@ export default function App() {
       <Route path="/pago" element={<Pago />} />
       <Route path="/pago-confirmado" element={<ConfirmacionPago />} />
 
-      {/* privadas (bloque con Outlet) */}
+      {/* GMAIL VERIFICAION */}
+      <Route path="/verify-email-success" element={<VerifyEmailSuccess />} />
+
+      {/* privadas */}
       <Route element={<ProtectedRoute />}>
         <Route path="/wizard" element={<Wizard />} />
         <Route path="/dashboard" element={<DashBoard />} />
-        <Route path="/Progreso" element={<Progreso />} />
+        <Route path="/progreso" element={<Progreso />} />
       </Route>
 
       {/* fallback */}

@@ -1,3 +1,5 @@
+// src/contexts/AuthContext.jsx:
+
 import React, {
   createContext,
   useContext,
@@ -60,21 +62,29 @@ export function AuthProvider({ children }) {
     };
   }, [token]);
 
+  // 🔹 Helper para setear user + token de una sola vez (lo usa VerifyEmailSuccess)
+  function setAuth({ user: u, token: t }) {
+    if (t) setToken(t);
+    if (u) setUser(u);
+  }
+
   // Helpers de sesión
-  async function login(email, password) {
+  // 👇 Aquí ahora esperamos UN objeto: { email, password }
+  async function login({ email, password }) {
     setError("");
+    // loginApi debe hacer el POST con { email, password }
     const { token: t, user: u } = await loginApi(email, password);
     setToken(t);
     setUser(u);
     return u;
   }
 
+  // Registro normal: ya NO guardamos token ni user,
+  // solo llamamos a la API que envía el correo de verificación
   async function register(payload) {
     setError("");
-    const { token: t, user: u } = await registerApi(payload);
-    setToken(t);
-    setUser(u);
-    return u;
+    const resp = await registerApi(payload); // suele devolver { message: "..." }
+    return resp;
   }
 
   async function googleSignIn(credential) {
@@ -108,6 +118,7 @@ export function AuthProvider({ children }) {
       // setters por si los necesitas
       setUser,
       setError,
+      setAuth, // 🔹 para VerifyEmailSuccess.jsx
     }),
     [user, token, loading, error]
   );
