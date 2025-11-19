@@ -608,165 +608,75 @@
     font-size: 16px;
 }
 
-/* ======================================= */
-/* ====== SUPERADMIN DASHBOARD (asst-) ===== */
-/* ======================================= */
-
-/* Contenedor principal del Dashboard */
-.asst-container {
-    /* El padding se define en el componente, aquí solo colores/fuente */
-    background: var(--asst-bg);
-    color: var(--asst-text);
-    min-height: 100vh;
+.asst-tooltip-wrap {
+  position: relative;
+  display: inline-block;
 }
 
-/* Títulos y subtítulos principales del dashboard */
-.asst-hero-title {
-    font-size: clamp(28px, 4vw, 38px);
-    font-weight: 900;
-    color: var(--asst-text);
-    margin-bottom: 0.5rem;
+.asst-tooltip-icon {
+  background: #2a3039;
+  border: 1px solid #394250;
+  color: #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
-.asst-hero-subtitle {
-    color: var(--asst-muted);
-    font-size: 16px;
+.asst-tooltip-icon:hover {
+  filter: brightness(1.2);
 }
 
-/* Estilo general para las tarjetas de sección (Usuarios, Estadísticas, Registro) */
-.asst-section-card {
-    /* Reutiliza el estilo de la tarjeta asst-card para consistencia */
-    background: var(--asst-surface);
-    border: 1px solid var(--asst-border);
-    border-radius: var(--asst-r);
-    padding: 20px;
-    box-shadow: var(--asst-shadow);
-    transition: transform 0.2s ease;
+/* --- FIX DEFINITIVO --- */
+/* Tooltip PEGADO al icono sin dejar huecos */
+.asst-tooltip-box {
+  position: absolute;
+  top: calc(100% - 1px); /* justo debajo del icono, sin GAP */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1b1b22;
+  border: 1px solid #333;
+  padding: 12px;
+  width: 220px;
+  border-radius: 10px;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  transform-origin: top;
+  z-index: 999;
 }
 
-.asst-section-card:hover {
-    transform: translateY(-2px); /* Efecto sutil al pasar el ratón */
+/* Mostrar al hacer hover */
+.asst-tooltip-wrap:hover .asst-tooltip-box {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(4px); /* animación suave hacia abajo */
 }
 
-.asst-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--asst-primary); /* Usa el color primario para destacar el título de la sección */
-    border-bottom: 2px solid var(--asst-border);
-    padding-bottom: 8px;
-    margin-bottom: 12px;
+.asst-tooltip-text {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #e5e7eb;
 }
 
-/* --- Lista de Usuarios Activos --- */
-
-.asst-user-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.05); /* Separador sutil */
+.asst-tooltip-button {
+  background: #7c3aed;
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
 }
 
-.asst-user-item:last-child {
-    border-bottom: none;
+.asst-tooltip-button:hover {
+  background: #8b5cf6;
 }
 
-.asst-user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--asst-surface-2); /* Color de fondo para el avatar vacío */
-    border: 2px solid var(--asst-primary); /* Borde de acento */
-    flex-shrink: 0;
-}
-
-.asst-user-info {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.3;
-}
-
-.asst-user-name {
-    font-weight: 700;
-    color: var(--asst-text);
-}
-
-.asst-user-status {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-top: 2px;
-    align-self: flex-start;
-}
-
-/* Estados de conexión */
-.asst-online {
-    background-color: #10b98120; /* verde suave */
-    color: #10b981;
-}
-
-.asst-away {
-    background-color: #f59e0b20; /* amarillo/naranja suave */
-    color: #f59e0b;
-}
-
-.asst-offline {
-    background-color: #6b728020; /* gris suave */
-    color: #9ca3af;
-}
-
-/* --- Lista de Estadísticas --- */
-
-.asst-stats-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.asst-stat-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--asst-border);
-    font-size: 16px;
-    color: var(--asst-muted);
-}
-
-.asst-stat-item:last-child {
-    border-bottom: none;
-}
-
-.asst-stat-item strong {
-    color: var(--asst-text);
-    font-weight: 700;
-}
-
-/* --- Caja de Registro Reciente --- */
-
-.asst-log-box {
-    background: var(--asst-surface-2);
-    border: 1px solid var(--asst-border);
-    border-radius: 12px;
-    padding: 12px;
-    max-height: 250px;
-    overflow-y: auto;
-}
-
-.asst-log-item {
-    font-family: monospace; /* Fuente monoespacio para logs */
-    font-size: 13px;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    color: var(--asst-muted);
-}
-
-.asst-log-item:last-child {
-    border-bottom: none;
-}
-
-/* Destaca la marca de tiempo y el evento */
-.asst-log-item::before {
-    content: attr(data-log-type); /* Si alguna vez añades atributos */
-    color: var(--asst-primary);
+.asst-tooltip-box.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }

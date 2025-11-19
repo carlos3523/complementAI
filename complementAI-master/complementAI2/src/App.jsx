@@ -8,9 +8,8 @@ import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
 import Progreso from "./pages/Progreso.jsx";
-import SuperAdminVisual from "./pages/SuperAdminVisual.jsx";
-import AdminVisual from "./pages/AdminVisual.jsx";
-import ModeratorVisual from "./pages/ModeratorVisual.jsx";
+import Pago from "./pages/Pago.jsx";
+import ConfirmacionPago from "./pages/ConfirmacionPago.jsx";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
@@ -22,9 +21,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/assistant" element={<Assistant />} />
-      <Route path="/superadmin" element={<SuperAdminVisual />} />
-      <Route path="/admin" element={<AdminVisual />} />
-      <Route path="/moderator" element={<ModeratorVisual />} />
+      <Route path="/pago" element={<Pago />} />
+      <Route path="/pago-confirmado" element={<ConfirmacionPago />} />
 
       {/* privadas (bloque con Outlet) */}
       <Route element={<ProtectedRoute />}>
