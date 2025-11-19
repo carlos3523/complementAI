@@ -204,7 +204,7 @@ app.get("/api/user/me", requireAuth, async (req, res) => {
 });
 
 /* Opcional: debugea qué viene en el token */
-});
+
 
 /* =========================
    404 y errores
