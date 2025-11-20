@@ -1,20 +1,15 @@
 // server/src/index.js
-// Servidor principal estable y compatible con Webpay
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 
-// Importación segura de módulos (NO aborta el servidor)
 import { auth } from "./routes/auth.js";
 import { projects } from "./routes/projects.js";
-import { payments } from "./routes/payments.js";
-import { query, pool } from "./sql/db.js";
 import { requireAuth } from "./middleware/auth.js";
+import { query } from "./sql/db.js"; // ajusta la ruta si tu archivo está en otro lado
 
 const app = express();
-
-const rawModel = process.env.DEFAULT_MODEL || "deepseek/deepseek-chat-v3.1";
 
 /* =========================
    Middlewares base
@@ -33,7 +28,7 @@ app.use(
 app.options("*", cors());
 
 /* =========================
-   Rutas base
+   Healthcheck
    ========================= */
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
@@ -43,28 +38,12 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/auth", auth);
 app.use("/api/projects", requireAuth, projects);
 
-// Auth
-if (auth) app.use("/api/auth", auth);
-else console.warn("⚠️ /api/auth no cargó.");
-
-// Projects
-if (projects) app.use("/api/projects", projects);
-else console.warn("⚠️ /api/projects no cargó.");
-
-// Payments (Webpay)
-if (payments) {
-  app.use("/api/payments", payments);
-  console.log("✅ /api/payments registrado y activo");
-} else {
-  console.warn("⚠️ /api/payments deshabilitado");
-}
-
 /* =========================
-   Chat (simulado)
+   Chat (OpenRouter)  ->  devuelve { content }
    ========================= */
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages } = req.body || {};
+    const { messages, model: rawModel } = req.body || {};
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: "Faltan messages" });
     }
@@ -72,8 +51,7 @@ app.post("/api/chat", async (req, res) => {
       return res.status(500).json({ error: "OPENROUTER_API_KEY no configurada" });
     }
 
-
-        // Modelo por defecto y sin sufijo :free (reduce 429)
+    // Modelo por defecto y sin sufijo :free (reduce 429)
     const model = (rawModel || "deepseek/deepseek-chat-v3.1").replace(/:free$/i, "");
 
     // Helper: fetch con timeout (30s)
@@ -168,9 +146,6 @@ app.post("/api/chat", async (req, res) => {
       return res.status(502).json({ error: "El modelo devolvió una respuesta vacía" });
     }
     return res.json({ content });
-
-    // Reemplázalo con la llamada a OpenRouter que ya tienes en tu otro server.
-    return res.json({ content: "Chat OK (simulado desde src/index.js)" });
   } catch (err) {
     console.error("ERR /api/chat", err);
     if (err?.name === "AbortError") {
@@ -181,9 +156,8 @@ app.post("/api/chat", async (req, res) => {
 });
 
 /* =========================
-   Debug user
+   Datos del usuario autenticado
    ========================= */
-
 app.get("/api/user/me", requireAuth, async (req, res) => {
   try {
     // Primero por id que viene en el token
@@ -212,31 +186,28 @@ app.get("/api/user/me", requireAuth, async (req, res) => {
     return res.status(500).json({ error: "No se pudo obtener el usuario" });
   }
 });
-   
-app.get("/api/debug/whoami", (_req, res) => {
-  res.json({ message: "Implementa requireAuth aquí si deseas" });
-});
 
+/* Opcional: debugea qué viene en el token */
 /* =========================
-   404 y errores
+   404 + Handler de errores
    ========================= */
 app.use((_req, res) => res.status(404).json({ error: "Not found" }));
+
 app.use((err, _req, res, _next) => {
   console.error("UNCAUGHT ERROR:", err);
   res.status(500).json({ error: "Error interno" });
 });
 
 /* =========================
-   Arranque del servidor
+   Arranque
    ========================= */
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`API escuchando en http://localhost:${port}`);
 });
+// 🔻 Apagado limpio del servidor y del pool de PostgreSQL
+import { pool } from "./sql/db.js";
 
-/* =========================
-   Apagado limpio
-   ========================= */
 process.on("SIGINT", async () => {
   console.log("\n🛑 Cerrando servidor…");
   await pool.end().catch(() => {});
@@ -248,18 +219,3 @@ process.on("SIGTERM", async () => {
   await pool.end().catch(() => {});
   process.exit(0);
 });
-
-// Add debugging logs for better traceability
-console.log("Starting server with the following environment variables:");
-console.log(`PORT: ${process.env.PORT}`);
-console.log(`CLIENT_ORIGIN: ${process.env.CLIENT_ORIGIN}`);
-console.log(`OPENROUTER_API_KEY: ${process.env.OPENROUTER_API_KEY ? "[REDACTED]" : "Not Set"}`);
-console.log(`DEFAULT_MODEL: ${rawModel}`);
-
-// Ensure all required environment variables are set
-if (!process.env.OPENROUTER_API_KEY) {
-  console.error("ERROR: OPENROUTER_API_KEY is not set. The server may not function correctly.");
-}
-if (!process.env.CLIENT_ORIGIN) {
-  console.warn("WARNING: CLIENT_ORIGIN is not set. Defaulting to http://localhost:5173.");
-}
