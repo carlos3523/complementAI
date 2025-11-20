@@ -162,7 +162,7 @@ const ProjectCard = React.memo(
                 <li className="asst-btn muted" style={{ padding: '6px 10px', fontSize: '0.8em', background: 'transparent', color: 'var(--asst-muted)', border: 'none' }}>
                   {moreTemplatesText}
                 </li>
-              )}
+               )}
             </ul>
           </div>
         )}
