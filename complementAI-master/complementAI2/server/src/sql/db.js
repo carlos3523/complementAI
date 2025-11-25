@@ -1,32 +1,33 @@
 // server/src/sql/db.js
-import pg from "pg";
+import pkg from "pg";
 
-const { Pool } = pg;
+const { Pool } = pkg;
 
+// Opcional: modo SSL según PGSSLMODE
 function buildSsl() {
   const mode = (process.env.PGSSLMODE || "").toLowerCase();
   if (mode === "no-verify") return { rejectUnauthorized: false };
-  if (mode === "require" || mode === "verify-full") return { rejectUnauthorized: true };
-  // Supabase pooler requiere SSL; si no definiste PGSSLMODE, forzamos no-verify.
+  if (mode === "require" || mode === "verify-full")
+    return { rejectUnauthorized: true };
+  // Supabase usa SSL, pero si no definiste nada, dejamos no-verify por simplicidad
   return { rejectUnauthorized: false };
 }
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: buildSsl(),
+const connectionString = process.env.DATABASE_URL;
 
-  // valores sanos para pooler
-  max: 10,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 5_000,
-  keepAlive: true,
+if (!connectionString) {
+  console.error("[db] ❌ Falta DATABASE_URL en server/.env");
+}
+
+const pool = new Pool({
+  connectionString,
+  ssl: buildSsl(),
 });
 
-// ¡Muy importante!: NO dejes este evento sin manejar
+// Log de errores del pool (sin tumbar el proceso)
 pool.on("error", (err) => {
-  console.error("[pg] Pool error:", err); // loguea pero NO revienta el proceso
+  console.error("[pg] Pool error:", err);
 });
 
 export const query = (text, params) => pool.query(text, params);
-
-
+export { pool };

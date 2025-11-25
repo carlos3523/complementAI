@@ -86,6 +86,30 @@ projects.post("/", async (req, res) => {
       return res.status(400).json({ error: "name es requerido" });
     }
 
+    // 🔹 Resolver el userId real de la tabla users
+    let userId = req.user?.id;
+
+    // Si el token no trae un id usable, buscamos por email
+    if ((!userId || Number.isNaN(Number(userId))) && req.user?.email) {
+      const u = await query("SELECT id FROM users WHERE email = $1", [
+        req.user.email,
+      ]);
+      if (u.rows[0]) {
+        userId = u.rows[0].id;
+      }
+    }
+
+    // Si aún así no hay userId, devolvemos 401
+    if (!userId) {
+      console.error(
+        "[projects.post] No se pudo resolver userId para:",
+        req.user
+      );
+      return res
+        .status(401)
+        .json({ error: "Usuario no encontrado para crear proyectos" });
+    }
+
     // Siempre asegura un array JSON “limpio”
     const safeTemplates = Array.isArray(templates) ? templates : [];
 
@@ -94,18 +118,18 @@ projects.post("/", async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6::jsonb)
        RETURNING *`,
       [
-        req.user.id,
+        userId, // 👈 ahora es el id real de users
         name.trim(),
         methodology || null,
         stage || null,
         domain || null,
-        JSON.stringify(safeTemplates), // <- explícito para jsonb
+        JSON.stringify(safeTemplates),
       ]
     );
 
     return res.status(201).json(rows[0]);
   } catch (e) {
-    console.error("CREATE PROJECT ERROR:", e); // <- verás el motivo real en consola
+    console.error("CREATE PROJECT ERROR:", e);
     return res.status(500).json({ error: "Error creando proyecto" });
   }
 });

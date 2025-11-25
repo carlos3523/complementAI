@@ -7,6 +7,24 @@ import { translations } from "../i18n/translations";
 // ==============================
 // Utilidades
 // ==============================
+
+function buildAuthHeader() {
+  try {
+    // Intento moderno: auth_user con token
+    const stored = JSON.parse(localStorage.getItem("auth_user") || "{}");
+    const tokenFromAuthUser = stored?.token;
+
+    // Intento legacy: "token" directo
+    const tokenFromLS = localStorage.getItem("token");
+
+    const token = tokenFromAuthUser || tokenFromLS;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    const tokenFromLS = localStorage.getItem("token");
+    return tokenFromLS ? { Authorization: `Bearer ${tokenFromLS}` } : {};
+  }
+}
+
 const loadAssistantPrefs = () => {
   try {
     const savedPrefs = JSON.parse(
@@ -30,34 +48,6 @@ const T_GLOBAL = (key, fallback = key) => {
 const generateUniqueId = () =>
   (crypto?.randomUUID && crypto.randomUUID()) ||
   `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-const STORAGE_KEY = "projects";
-
-const projectStore = {
-  get: () => {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      const list = data ? JSON.parse(data) : [];
-      return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    } catch (error) {
-      console.error("Error al leer proyectos de localStorage:", error);
-      return [];
-    }
-  },
-  set: (list) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    } catch (error) {
-      console.error("Error al escribir proyectos en localStorage:", error);
-    }
-  },
-  remove: (id) => {
-    const list = projectStore.get();
-    const updatedList = list.filter((p) => p.id !== id);
-    projectStore.set(updatedList);
-    return updatedList;
-  },
-};
 
 const formatCreationDate = (timestamp) => {
   if (!timestamp) return T_GLOBAL("DATE_UNKNOWN", "Fecha desconocida");
@@ -364,16 +354,43 @@ export default function DashBoard() {
   );
 
   useEffect(() => {
-    setIsLoading(true);
-    const prefs = loadAssistantPrefs();
-    setLanguage(prefs.language);
-    setTheme(prefs.theme);
-    setProjects(projectStore.get());
-    setIsLoading(false);
+    async function loadProjects() {
+      setIsLoading(true);
+      try {
+        const prefs = loadAssistantPrefs();
+        setLanguage(prefs.language);
+        setTheme(prefs.theme);
+
+        const authUser = JSON.parse(localStorage.getItem("auth_user") || "{}");
+        const token = authUser.token || "";
+        const res = await fetch("/api/projects", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...buildAuthHeader(), // 👈 AÑADIDO
+          },
+          credentials: "include", // puedes dejarlo, no molesta
+        });
+
+        if (!res.ok) {
+          throw new Error("Error al cargar proyectos");
+        }
+
+        const data = await res.json();
+        setProjects(data);
+      } catch (err) {
+        console.error("Error cargando proyectos:", err);
+        setProjects([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProjects();
   }, []);
 
   const handleDelete = useCallback(
-    (id) => {
+    async (id) => {
       if (
         !window.confirm(
           T(
@@ -383,33 +400,63 @@ export default function DashBoard() {
         )
       )
         return;
-      const updatedList = projectStore.remove(id);
-      setProjects(updatedList);
+
+      try {
+        const res = await fetch(`/api/projects/${id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+
+        if (!res.ok && res.status !== 204) {
+          throw new Error("No se pudo eliminar el proyecto");
+        }
+
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+      } catch (err) {
+        console.error("Error al eliminar proyecto:", err);
+        alert("Error al eliminar el proyecto");
+      }
     },
     [T]
   );
 
   const handleDuplicate = useCallback(
-    (id) => {
-      const list = projectStore.get();
-      const projectToDuplicate = list.find((x) => x.id === id);
-      if (!projectToDuplicate) {
-        console.warn(`Proyecto con ID ${id} no encontrado para duplicar.`);
-        return;
+    async (id) => {
+      try {
+        const original = projects.find((x) => x.id === id);
+        if (!original) {
+          console.warn(`Proyecto con ID ${id} no encontrado para duplicar.`);
+          return;
+        }
+
+        const body = {
+          name: `${original.name}${T("DUPLICATE_SUFFIX", " (copia)")}`,
+          methodology: original.methodology,
+          stage: original.stage,
+          domain: original.domain,
+          templates: original.templates || [],
+        };
+
+        const res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          throw new Error("No se pudo duplicar el proyecto");
+        }
+
+        const created = await res.json();
+        setProjects((prev) => [created, ...prev]);
+      } catch (err) {
+        console.error("Error duplicando proyecto:", err);
+        alert("Error al duplicar el proyecto");
       }
-
-      const cloned = {
-        ...projectToDuplicate,
-        id: generateUniqueId(),
-        name: `${projectToDuplicate.name}${T("DUPLICATE_SUFFIX", " (copia)")}`,
-        createdAt: Date.now(),
-      };
-
-      const updated = [cloned, ...list];
-      projectStore.set(updated);
-      setProjects(updated);
     },
-    [T]
+    [projects, T]
   );
 
   const handleOpenInAssistant = useCallback(

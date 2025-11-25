@@ -7,7 +7,7 @@ import morgan from "morgan";
 import { auth } from "./routes/auth.js";
 import { projects } from "./routes/projects.js";
 import { requireAuth } from "./middleware/auth.js";
-import { query } from "./sql/db.js";
+import { query, pool } from "./sql/db.js";
 import scrumRoutes from "./routes/scrum.js";
 
 const app = express();
@@ -237,8 +237,6 @@ const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`API escuchando en http://localhost:${port}`);
 });
-// 🔻 Apagado limpio del servidor y del pool de PostgreSQL
-import { pool } from "./sql/db.js";
 
 process.on("SIGINT", async () => {
   console.log("\n🛑 Cerrando servidor…");
