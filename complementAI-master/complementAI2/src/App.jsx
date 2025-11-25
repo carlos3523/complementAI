@@ -11,8 +11,10 @@ import Progreso from "./pages/Progreso.jsx";
 import SuperAdminVisual from "./pages/SuperAdminVisual.jsx";
 import AdminVisual from "./pages/AdminVisual.jsx";
 import ModeratorVisual from "./pages/ModeratorVisual.jsx";
-
+import ScrumMembersPage from "./pages/scrumMembers.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
+import ScrumBacklogPage from "./pages/ScrumBacklog.jsx";
+import ScrumSprintPage from "./pages/ScrumSprint.jsx";
 
 export default function App() {
   return (
@@ -31,6 +33,9 @@ export default function App() {
         <Route path="/wizard" element={<Wizard />} />
         <Route path="/dashboard" element={<DashBoard />} />
         <Route path="/Progreso" element={<Progreso />} />
+        <Route path="/scrum" element={<ScrumMembersPage />} />
+        <Route path="/scrum/backlog" element={<ScrumBacklogPage />} />
+        <Route path="/scrum/sprint" element={<ScrumSprintPage />} />
       </Route>
 
       {/* fallback */}

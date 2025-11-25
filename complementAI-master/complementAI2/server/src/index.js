@@ -1,13 +1,14 @@
 // server/src/index.js
 import "dotenv/config";
-import express from "express";
+import express, { Router } from "express";
 import cors from "cors";
 import morgan from "morgan";
 
 import { auth } from "./routes/auth.js";
 import { projects } from "./routes/projects.js";
 import { requireAuth } from "./middleware/auth.js";
-import { query } from "./sql/db.js"; // ajusta la ruta si tu archivo está en otro lado
+import { query } from "./sql/db.js";
+import scrumRoutes from "./routes/scrum.js";
 
 const app = express();
 
@@ -38,6 +39,8 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/auth", auth);
 app.use("/api/projects", requireAuth, projects);
 
+app.use("/api/scrum", requireAuth, scrumRoutes);
+
 /* =========================
    Chat (OpenRouter)  ->  devuelve { content }
    ========================= */
@@ -48,11 +51,16 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Faltan messages" });
     }
     if (!process.env.OPENROUTER_API_KEY) {
-      return res.status(500).json({ error: "OPENROUTER_API_KEY no configurada" });
+      return res
+        .status(500)
+        .json({ error: "OPENROUTER_API_KEY no configurada" });
     }
 
     // Modelo por defecto y sin sufijo :free (reduce 429)
-    const model = (rawModel || "deepseek/deepseek-chat-v3.1").replace(/:free$/i, "");
+    const model = (rawModel || "deepseek/deepseek-chat-v3.1").replace(
+      /:free$/i,
+      ""
+    );
 
     // Helper: fetch con timeout (30s)
     async function fetchWithTimeout(url, opts = {}, timeoutMs = 30000) {
@@ -66,24 +74,29 @@ app.post("/api/chat", async (req, res) => {
     }
 
     async function callOpenRouter(modelToUse) {
-      const r = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.SITE_URL || "http://localhost:5173",
-          "X-Title": process.env.SITE_NAME || "ComplementAI",
-        },
-        body: JSON.stringify({
-          model: modelToUse,
-          messages,
-          temperature: 0.2,
-        }),
-      });
+      const r = await fetchWithTimeout(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": process.env.SITE_URL || "http://localhost:5173",
+            "X-Title": process.env.SITE_NAME || "ComplementAI",
+          },
+          body: JSON.stringify({
+            model: modelToUse,
+            messages,
+            temperature: 0.2,
+          }),
+        }
+      );
 
       const text = await r.text();
       let json = null;
-      try { json = JSON.parse(text); } catch {}
+      try {
+        json = JSON.parse(text);
+      } catch {}
       return { ok: r.ok, status: r.status, text, json, headers: r.headers };
     }
 
@@ -94,7 +107,9 @@ app.post("/api/chat", async (req, res) => {
     const policy404 =
       resp.status === 404 &&
       typeof resp.text === "string" &&
-      resp.text.toLowerCase().includes("no endpoints found matching your data policy");
+      resp.text
+        .toLowerCase()
+        .includes("no endpoints found matching your data policy");
     if (policy404) {
       resp = await callOpenRouter("openrouter/auto");
     }
@@ -106,8 +121,10 @@ app.post("/api/chat", async (req, res) => {
       return res
         .status(429)
         .set({
-          "x-ratelimit-remaining-requests": h?.get?.("x-ratelimit-remaining-requests") || "",
-          "x-ratelimit-reset-requests": h?.get?.("x-ratelimit-reset-requests") || "",
+          "x-ratelimit-remaining-requests":
+            h?.get?.("x-ratelimit-remaining-requests") || "",
+          "x-ratelimit-reset-requests":
+            h?.get?.("x-ratelimit-reset-requests") || "",
         })
         .json({ error: `Límite de solicitudes alcanzado. ${msg}` });
     }
@@ -122,8 +139,10 @@ app.post("/api/chat", async (req, res) => {
         return res
           .status(429)
           .set({
-            "x-ratelimit-remaining-requests": h2?.get?.("x-ratelimit-remaining-requests") || "",
-            "x-ratelimit-reset-requests": h2?.get?.("x-ratelimit-reset-requests") || "",
+            "x-ratelimit-remaining-requests":
+              h2?.get?.("x-ratelimit-remaining-requests") || "",
+            "x-ratelimit-reset-requests":
+              h2?.get?.("x-ratelimit-reset-requests") || "",
           })
           .json({ error: `Límite de solicitudes alcanzado. ${msg}` });
       }
@@ -135,7 +154,9 @@ app.post("/api/chat", async (req, res) => {
 
       const contentAlt = alt.json?.choices?.[0]?.message?.content;
       if (!contentAlt || !contentAlt.trim()) {
-        return res.status(502).json({ error: "El modelo devolvió una respuesta vacía (alt)" });
+        return res
+          .status(502)
+          .json({ error: "El modelo devolvió una respuesta vacía (alt)" });
       }
       return res.json({ content: contentAlt });
     }
@@ -143,13 +164,17 @@ app.post("/api/chat", async (req, res) => {
     // 3) OK principal
     const content = resp.json?.choices?.[0]?.message?.content;
     if (!content || !content.trim()) {
-      return res.status(502).json({ error: "El modelo devolvió una respuesta vacía" });
+      return res
+        .status(502)
+        .json({ error: "El modelo devolvió una respuesta vacía" });
     }
     return res.json({ content });
   } catch (err) {
     console.error("ERR /api/chat", err);
     if (err?.name === "AbortError") {
-      return res.status(504).json({ error: "Timeout al consultar el modelo (504)" });
+      return res
+        .status(504)
+        .json({ error: "Timeout al consultar el modelo (504)" });
     }
     return res.status(500).json({ error: "Server error" });
   }
@@ -170,7 +195,10 @@ app.get("/api/user/me", requireAuth, async (req, res) => {
 
     // Fallback por email (por si tienes datos antiguos con ids distintos)
     if (!rs.rows[0] && req.user.email) {
-      console.warn("[/api/user/me] id no encontrado, probando por email:", req.user.email);
+      console.warn(
+        "[/api/user/me] id no encontrado, probando por email:",
+        req.user.email
+      );
       rs = await query(
         `select id, email, first_name, last_name, theme, created_at
          from users
@@ -191,7 +219,6 @@ app.get("/api/user/me", requireAuth, async (req, res) => {
 app.get("/api/debug/whoami", requireAuth, (req, res) => {
   res.json({ userFromToken: req.user });
 });
-
 
 /* =========================
    404 + Handler de errores

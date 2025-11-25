@@ -28,7 +28,6 @@ const pool = new Pool({
 
 const app = express();
 
-
 // logger simple
 app.use((req, _res, next) => {
   console.log(`[API] ${req.method} ${req.url}`);
@@ -94,11 +93,16 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Faltan messages" });
     }
     if (!process.env.OPENROUTER_API_KEY) {
-      return res.status(500).json({ error: "OPENROUTER_API_KEY no configurada" });
+      return res
+        .status(500)
+        .json({ error: "OPENROUTER_API_KEY no configurada" });
     }
 
     // Evita modelos ":free" (suelen gatillar 429). Usa tu preferido.
-    const preferredModel = (model || "deepseek/deepseek-chat-v3.1").replace(/:free$/i, "");
+    const preferredModel = (model || "deepseek/deepseek-chat-v3.1").replace(
+      /:free$/i,
+      ""
+    );
 
     const baseHeaders = {
       Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -119,7 +123,9 @@ app.post("/api/chat", async (req, res) => {
       });
       const text = await r.text();
       let json = null;
-      try { json = JSON.parse(text); } catch {}
+      try {
+        json = JSON.parse(text);
+      } catch {}
       return { ok: r.ok, status: r.status, text, json, headers: r.headers };
     }
 
@@ -130,7 +136,9 @@ app.post("/api/chat", async (req, res) => {
     const policy404 =
       resp.status === 404 &&
       typeof resp.text === "string" &&
-      resp.text.toLowerCase().includes("no endpoints found matching your data policy");
+      resp.text
+        .toLowerCase()
+        .includes("no endpoints found matching your data policy");
     if (policy404) {
       console.warn("[OpenRouter] 404 por data policy -> openrouter/auto");
       resp = await callOpenRouter("openrouter/auto");
@@ -153,7 +161,9 @@ app.post("/api/chat", async (req, res) => {
 
       if (alt.status === 429) {
         const msg = alt.json?.error?.message || alt.text || "Rate limit (429)";
-        return res.status(429).json({ error: `Límite de solicitudes alcanzado. ${msg}` });
+        return res
+          .status(429)
+          .json({ error: `Límite de solicitudes alcanzado. ${msg}` });
       }
       if (!alt.ok) {
         return res.status(alt.status).json({
@@ -163,7 +173,9 @@ app.post("/api/chat", async (req, res) => {
 
       const contentAlt = alt.json?.choices?.[0]?.message?.content;
       if (!contentAlt || !contentAlt.trim()) {
-        return res.status(502).json({ error: "El modelo devolvió una respuesta vacía (alt)" });
+        return res
+          .status(502)
+          .json({ error: "El modelo devolvió una respuesta vacía (alt)" });
       }
       return res.json({ content: contentAlt });
     }
@@ -171,7 +183,9 @@ app.post("/api/chat", async (req, res) => {
     // 3) OK principal
     const content = resp.json?.choices?.[0]?.message?.content;
     if (!content || !content.trim()) {
-      return res.status(502).json({ error: "El modelo devolvió una respuesta vacía" });
+      return res
+        .status(502)
+        .json({ error: "El modelo devolvió una respuesta vacía" });
     }
     return res.json({ content });
   } catch (err) {

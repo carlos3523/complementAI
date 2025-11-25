@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { chat } from "../services/chat";
 import { updateTheme } from "../services/auth";
 import AuthButton from "../components/AuthButton";
@@ -8,15 +8,32 @@ import "./assistant.css";
 import { useLanguage } from "../contexts/LanguageContext";
 import { translations } from "../i18n/translations";
 
+import { getProjectMembers } from "../services/scrum";
+
 /* ===============================
     Persistencia (localStorage)
     =============================== */
 const LS_THREADS = "asst_threads_v1";
 const now = () => Date.now();
 
+async function handleTestScrum() {
+  try {
+    // Cambia 1 por un id de proyecto que sepas que existe en tu tabla projects
+    const projectId = 1;
+    const members = await getProjectMembers(projectId);
+    console.log("✅ Miembros Scrum del proyecto", projectId, members);
+    alert("Scrum API OK. Revisa la consola (F12 → Console).");
+  } catch (err) {
+    console.error("❌ Error llamando Scrum API:", err);
+    alert(err.message || "Error llamando Scrum API");
+  }
+}
+
 // --- Función auxiliar (copiada de AuthButton para cargar preferencias)
 function loadAssistantPrefs() {
-  const savedPrefs = JSON.parse(localStorage.getItem("assistant_prefs") || "{}");
+  const savedPrefs = JSON.parse(
+    localStorage.getItem("assistant_prefs") || "{}"
+  );
   return {
     assistantStyle: savedPrefs.style || "detallado",
     showEmojis: savedPrefs.emojis ?? true,
@@ -48,7 +65,6 @@ const seedThread = () => ({
 function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
   const { language } = useLanguage();
   const t = translations[language];
-  
 
   return (
     <div className="hero-shell">
@@ -81,11 +97,13 @@ function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
               if (e.shiftKey) {
                 if (before.endsWith("  ")) {
                   e.target.value = before.slice(0, -2) + after;
-                  e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
+                  e.target.selectionStart = e.target.selectionEnd =
+                    selectionStart - 2;
                 }
               } else {
                 e.target.value = before + "  " + after;
-                e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
+                e.target.selectionStart = e.target.selectionEnd =
+                  selectionStart + 2;
               }
 
               // Mantener sincronizado el estado
@@ -102,6 +120,19 @@ function EmptyHero({ value, setValue, onSend, fontSizeClass }) {
           <button className="hero-send" onClick={onSend} title={t.send}>
             ↑
           </button>
+          <button
+            onClick={handleTestScrum}
+            style={{
+              marginLeft: 12,
+              padding: "6px 12px",
+              borderRadius: 999,
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Test Scrum API
+          </button>
+          ;
         </div>
       </div>
     </div>
@@ -118,6 +149,24 @@ export default function AssistantPage() {
 
   const STORAGE_KEY = `asst_threads_v1_${user?.id || "guest"}`;
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Leemos parámetros de la URL y armamos un contexto de proyecto
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
+
+  const projectContext = useMemo(
+    () => ({
+      projectId: searchParams.get("projectId"),
+      name: searchParams.get("name") || "",
+      standard: searchParams.get("standard") || "",
+      phase: searchParams.get("phase") || "",
+      domain: searchParams.get("domain") || "",
+    }),
+    [searchParams]
+  );
 
   const [theme, setTheme] = useState(
     () => localStorage.getItem("asst_theme") || "ink"
@@ -138,7 +187,7 @@ export default function AssistantPage() {
   const [editingId, setEditingId] = useState(null);
 
   const [fontSize, setFontSize] = useState("medium");
-  const [showTimestamps, setShowTimestamps] = useState(true); 
+  const [showTimestamps, setShowTimestamps] = useState(true);
   const [autoScroll, setAutoScroll] = useState(true); // 👈 NUEVO ESTADO para auto-scroll
 
   const current = threads.find((t) => t.id === currentId) || threads[0];
@@ -159,7 +208,6 @@ export default function AssistantPage() {
   useEffect(() => {
     refreshConfig();
   }, []);
-
 
   /* ===============================
       VOZ: Lectura y reconocimiento
@@ -254,6 +302,36 @@ export default function AssistantPage() {
     return (first || oneLine).slice(0, 60) || t.untitled;
   }
 
+  // ===========================
+  // Prompt base con contexto de proyecto
+  // ===========================
+  const baseSystemPrompt = useMemo(() => {
+    const parts = [
+      "You are ComplementAI, a project assistant.",
+      "Answer concisely, using good project management practices.",
+    ];
+
+    if (projectContext.projectId) {
+      parts.push(
+        `The user is currently working on project ID ${projectContext.projectId}.`,
+        projectContext.name
+          ? `Project name: ${projectContext.name}.`
+          : "The project may not have a visible name.",
+        projectContext.standard
+          ? `Methodology/framework: ${projectContext.standard}.`
+          : "Methodology/framework not specified.",
+        projectContext.phase
+          ? `Project phase: ${projectContext.phase}.`
+          : "Project phase not specified.",
+        projectContext.domain
+          ? `Domain/industry: ${projectContext.domain}.`
+          : "Domain/industry not specified."
+      );
+    }
+
+    return parts.join(" ");
+  }, [projectContext]);
+
   async function handleSend() {
     setErrMsg("");
     const text = input.trim();
@@ -272,8 +350,11 @@ export default function AssistantPage() {
       }));
 
       const responseText = await chat([
-        { role: "system", content: "You are ComplementAI, a project assistant." },
-        ...conversationHistory.slice(1), 
+        {
+          role: "system",
+          content: baseSystemPrompt,
+        },
+        ...conversationHistory.slice(1),
         { role: "user", content: text },
       ]);
       const aiMsg = {
@@ -347,7 +428,7 @@ export default function AssistantPage() {
     <main
       className={`assistant-screen ${sidebarOpen ? "" : "is-collapsed"}`}
       data-theme={theme}
-      data-font-size={fontSize} 
+      data-font-size={fontSize}
     >
       {/* Appbar */}
       <div className="asst-appbar">
@@ -362,13 +443,18 @@ export default function AssistantPage() {
           <div className="asst-appbar-title">📁 {t.projectAssistant}</div>
         </div>
 
-        <div className="asst-appbar-actions" style={{ display: "flex", gap: 8 }}>
+        <div
+          className="asst-appbar-actions"
+          style={{ display: "flex", gap: 8 }}
+        >
           <button
             className="asst-appbar-btn"
             onClick={() =>
               token
                 ? navigate("/wizard")
-                : navigate("/login", { state: { from: { pathname: "/Wizard" } } })
+                : navigate("/login", {
+                    state: { from: { pathname: "/Wizard" } },
+                  })
             }
           >
             Wizard
@@ -378,7 +464,9 @@ export default function AssistantPage() {
             onClick={() =>
               token
                 ? navigate("/dashboard")
-                : navigate("/login", { state: { from: { pathname: "/DashBoard" } } })
+                : navigate("/login", {
+                    state: { from: { pathname: "/DashBoard" } },
+                  })
             }
           >
             Dashboard
@@ -392,6 +480,51 @@ export default function AssistantPage() {
           <AuthButton logoutRedirectTo="/login" refreshConfig={refreshConfig} />
         </div>
       </div>
+
+      {projectContext.projectId && (
+        <div
+          className="asst-card"
+          style={{
+            maxWidth: 900,
+            margin: "12px auto 0",
+            padding: "12px 16px",
+          }}
+        >
+          <div
+            className="asst-side-title"
+            style={{ marginBottom: 4, fontSize: "0.9rem" }}
+          >
+            Proyecto activo
+          </div>
+          <div style={{ fontSize: "0.9rem" }}>
+            <strong>ID:</strong> {projectContext.projectId}
+            {projectContext.name && (
+              <>
+                {" "}
+                · <strong>Nombre:</strong> {projectContext.name}
+              </>
+            )}
+            {projectContext.standard && (
+              <>
+                {" "}
+                · <strong>Metodología:</strong> {projectContext.standard}
+              </>
+            )}
+            {projectContext.phase && (
+              <>
+                {" "}
+                · <strong>Fase:</strong> {projectContext.phase}
+              </>
+            )}
+            {projectContext.domain && (
+              <>
+                {" "}
+                · <strong>Dominio:</strong> {projectContext.domain}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Layout */}
       <div className="asst-wrap">
@@ -414,7 +547,9 @@ export default function AssistantPage() {
                 onClick={() =>
                   token
                     ? navigate("/Progreso")
-                    : navigate("/login", { state: { from: { pathname: "/Progreso" } } })
+                    : navigate("/login", {
+                        state: { from: { pathname: "/Progreso" } },
+                      })
                 }
               >
                 {t.progress || "Progreso"}
@@ -520,23 +655,25 @@ export default function AssistantPage() {
             <div className="asst-side-title" style={{ marginTop: 12 }}>
               {t.industry}
             </div>
-            <input
-              className="asst-input"
-              placeholder="Salud, Retail, Banca…"
-            />
+            <input className="asst-input" placeholder="Salud, Retail, Banca…" />
           </div>
         </aside>
 
         {/* Chat */}
         <section className="asst-chat">
           {!hasUserMsgs ? (
-            <EmptyHero value={input} setValue={setInput} onSend={handleSend} fontSizeClass={fontSize} />
+            <EmptyHero
+              value={input}
+              setValue={setInput}
+              onSend={handleSend}
+              fontSizeClass={fontSize}
+            />
           ) : (
             <>
               <div className="assistant-chat" data-font-size={fontSize}>
                 {messages.map((m) => {
                   const isUser = m.role === "user";
-                  
+
                   // Lógica para incluir/excluir marca de tiempo
                   const timeString = showTimestamps
                     ? new Date(m.ts).toLocaleTimeString([], {
@@ -544,7 +681,7 @@ export default function AssistantPage() {
                         minute: "2-digit",
                       })
                     : "";
-                  
+
                   // Crear la metadata condicionalmente
                   const meta = `${isUser ? "Tú" : t.projectAssistant}${
                     showTimestamps ? ` • ${timeString}` : ""
@@ -557,7 +694,7 @@ export default function AssistantPage() {
                     >
                       {!isUser && <div className="asst-avatar" />}
                       <div className={`asst-block ${isUser ? "me" : "ai"}`}>
-                        <div className="asst-meta">{meta}</div> 
+                        <div className="asst-meta">{meta}</div>
                         <div className="asst-content">{m.text}</div>
                       </div>
                       {isUser && <div className="asst-avatar me" />}
@@ -602,11 +739,13 @@ export default function AssistantPage() {
                       if (e.shiftKey) {
                         if (before.endsWith("  ")) {
                           e.target.value = before.slice(0, -2) + after;
-                          e.target.selectionStart = e.target.selectionEnd = selectionStart - 2;
+                          e.target.selectionStart = e.target.selectionEnd =
+                            selectionStart - 2;
                         }
                       } else {
                         e.target.value = before + "  " + after;
-                        e.target.selectionStart = e.target.selectionEnd = selectionStart + 2;
+                        e.target.selectionStart = e.target.selectionEnd =
+                          selectionStart + 2;
                       }
 
                       const event = new Event("input", { bubbles: true });
