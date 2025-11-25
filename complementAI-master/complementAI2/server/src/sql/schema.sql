@@ -1,4 +1,7 @@
-CREATE TABLE IF NOT EXISTS users (
+-- ===========================
+--  TABLA USERS
+-- ===========================
+CREATE TABLE IF NOT EXISTS public.users (
   id BIGSERIAL PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
@@ -8,9 +11,12 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS projects (
+-- ===========================
+--  TABLA PROJECTS
+-- ===========================
+CREATE TABLE IF NOT EXISTS public.projects (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   methodology TEXT,
   stage TEXT,
@@ -20,8 +26,13 @@ CREATE TABLE IF NOT EXISTS projects (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_projects_user ON public.projects(user_id);
 
+-- ===========================
+--  CAMPOS EXTRA PARA AUTH:
+--  - Google / otros providers
+--  - Verificación de correo
+-- ===========================
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS first_name text,
   ADD COLUMN IF NOT EXISTS last_name  text,

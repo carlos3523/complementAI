@@ -8,6 +8,8 @@ import Assistant from "./pages/Assistant.jsx";
 import Wizard from "./pages/Wizard.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
 import Progreso from "./pages/Progreso.jsx";
+import VerifyEmailSuccess from "./pages/VerifyEmailSuccess.jsx";
+
 import SuperAdminVisual from "./pages/SuperAdminVisual.jsx";
 import AdminVisual from "./pages/AdminVisual.jsx";
 import ModeratorVisual from "./pages/ModeratorVisual.jsx";
@@ -28,7 +30,10 @@ export default function App() {
       <Route path="/admin" element={<AdminVisual />} />
       <Route path="/moderator" element={<ModeratorVisual />} />
 
-      {/* privadas (bloque con Outlet) */}
+      {/* GMAIL VERIFICAION */}
+      <Route path="/verify-email-success" element={<VerifyEmailSuccess />} />
+
+      {/* privadas */}
       <Route element={<ProtectedRoute />}>
         <Route path="/wizard" element={<Wizard />} />
         <Route path="/dashboard" element={<DashBoard />} />

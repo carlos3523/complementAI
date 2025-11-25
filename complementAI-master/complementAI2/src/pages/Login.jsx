@@ -1,217 +1,122 @@
 // src/pages/Login.jsx
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { login as loginApi, googleSignIn } from "../services/auth";
+import { GoogleLogin } from "@react-oauth/google";
 import "../style.css";
+
+// Icono flecha
+const ArrowLeft = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || "/Assistant";
+  const { login, googleSignIn } = useAuth();
 
-  const googleBtnRef = useRef(null);
-  const [showPwd, setShowPwd] = useState(false);
-
-  let ctx;
-  try {
-    ctx = useAuth();
-  } catch {
-    // Si no hay AuthContext, usamos el fallback con localStorage
-  }
-
-  // =======================
-  // Manejo de login manual
-  // =======================
   async function handleSubmit(e) {
     e.preventDefault();
+
     const fd = new FormData(e.currentTarget);
-    const email = (fd.get("email")?.toString().trim() || "").toLowerCase();
-    const password = fd.get("password")?.toString();
+    const email = fd.get("email").toString().trim().toLowerCase();
+    const password = fd.get("password").toString();
 
     try {
-      if (ctx?.login) {
-        await ctx.login(email, password);
-      } else {
-        const { token } = await loginApi(email, password);
-        if (token) localStorage.setItem("token", token);
-      }
-      navigate(from, { replace: true });
+      await login({ email, password });
+      navigate("/assistant");
     } catch (err) {
       alert(err.message || "No se pudo iniciar sesión");
     }
   }
 
-  // =======================
-  // Google Identity Services
-  // =======================
-  useEffect(() => {
-    const cid = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    console.log("[GSI] client_id:", cid);
-    console.log("[GSI] window.google present?", !!window.google);
-
-    if (!window.google) {
-      console.warn("[GSI] Google script not found. Check <script> and adblock.");
-      return;
-    }
-    if (!cid) {
-      console.warn("[GSI] Missing VITE_GOOGLE_CLIENT_ID. Did you restart Vite?");
-      return;
-    }
-
-    /* global google */
-    google.accounts.id.initialize({
-      client_id: cid,
-      callback: async (response) => {
-        try {
-          const credential = response.credential;
-          if (!credential) throw new Error("No se recibió credential de Google");
-
-          // ⬅️ PRIMERO intentamos usar el contexto (actualiza user al tiro)
-          if (ctx?.googleSignIn) {
-            await ctx.googleSignIn(credential);
-          } else {
-            // Fallback sin contexto
-            const { token } = await googleSignIn(credential);
-            if (token) localStorage.setItem("token", token);
-          }
-
-          navigate(from, { replace: true });
-        } catch (err) {
-          console.error("[GSI] Backend error:", err);
-          alert(err.message || "Error al iniciar sesión con Google");
-        }
-      },
-      auto_select: false,
-      cancel_on_tap_outside: true,
-    });
-
-    if (googleBtnRef.current) {
-      try {
-        google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: "outline",
-          size: "large",
-          type: "standard",
-          shape: "rectangular",
-          logo_alignment: "left",
-          width: 340,
-          text: "signin_with",
-        });
-        console.log("[GSI] Button rendered");
-      } catch (e) {
-        console.error("[GSI] renderButton error:", e);
-      }
-    } else {
-      console.warn("[GSI] googleBtnRef.current is null");
-    }
-  }, [from, navigate, ctx]);
-
-  // =======================
-  // Render
-  // =======================
   return (
-    <main className="auth auth--gradient">
-      <header className="auth-topbar">
-        <Link className="topbar-back" to="/">← Home</Link>
-        <div className="topbar-brand">
-          <span className="brand-mark">◎</span>
-          <span className="brand-name">PEPPO</span>
-        </div>
-      </header>
+    <main className="auth">
+      {/* Back Button */}
+      <Link to="/" className="back-btn">
+        <ArrowLeft />
+        <span>Home</span>
+      </Link>
 
-      <div className="auth-card auth-card--soft">
-        <h1 className="auth-welcome">Welcome Back!</h1>
-        <p className="auth-sub">We missed you! Please enter your details.</p>
+      <div className="auth-card">
+        <h2 className="auth-title">Welcome Back!</h2>
+        <p className="auth-subtitle">
+          We missed you! Please enter your details.
+        </p>
 
-        <form onSubmit={handleSubmit} noValidate className="auth-form">
-          <label className="field">
-            <span className="field-label">Email</span>
-            <span className="input-wrap">
-              <svg className="input-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 6h16v12H4z" fill="none" stroke="currentColor" />
-                <path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" />
-              </svg>
-              <input
-                className="input"
-                name="email"
-                type="email"
-                placeholder="Enter your Email"
-                required
-              />
-            </span>
-          </label>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="field">
+            <label className="label">Email</label>
+            <input
+              className="input"
+              name="email"
+              type="email"
+              placeholder="Enter your Email"
+              required
+            />
+          </div>
 
-          <label className="field">
-            <span className="field-label">Password</span>
-            <span className="input-wrap">
-              <svg className="input-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 4a8 8 0 0 1 8 8s-3 6-8 6-8-6-8-6 3-8 8-8z"
-                  fill="none"
-                  stroke="currentColor"
-                />
-                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" />
-              </svg>
-              <input
-                className="input"
-                name="password"
-                type={showPwd ? "text" : "password"}
-                placeholder="Enter Password"
-                required
-                minLength={4}
-              />
-              <button
-                type="button"
-                className="input-ghost"
-                aria-label={showPwd ? "Hide password" : "Show password"}
-                onClick={() => setShowPwd((v) => !v)}
-              >
-                {showPwd ? "🙈" : "👁️"}
-              </button>
-            </span>
-          </label>
-
-          <div className="row-between">
-            <label className="remember">
-              <input type="checkbox" /> <span>Remember me</span>
-            </label>
-            <Link to="/forgot" className="link-inline">
-              Forgot password?
-            </Link>
+          <div className="field">
+            <label className="label">Password</label>
+            <input
+              className="input"
+              name="password"
+              type="password"
+              placeholder="Enter Password"
+              required
+            />
           </div>
 
           <button className="btn-primary btn-wide" type="submit">
             Sign in
           </button>
+
+          <div className="or-separator">
+            <span className="or-line"></span>
+            <span className="or-text">or</span>
+            <span className="or-line"></span>
+          </div>
+
+          {/* 🔹 Google Login Oficial */}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                try {
+                  await googleSignIn(credentialResponse.credential);
+                  navigate("/assistant");
+                } catch (err) {
+                  console.error("Error Google:", err);
+                  alert(err.message || "No se pudo iniciar sesión con Google");
+                }
+              }}
+              onError={() => {
+                alert("Error al iniciar sesión con Google");
+              }}
+              theme="outline"
+              shape="pill"
+              size="large"
+              locale="es"
+            />
+          </div>
+
+          <p className="muted" style={{ marginTop: "16px" }}>
+            Don't have an account?{" "}
+            <Link to="/register" className="link-inline">
+              Sign up
+            </Link>
+          </p>
         </form>
-
-        <div className="or-separator">
-          <span className="or-line" />
-          <span className="or-text">or</span>
-          <span className="or-line" />
-        </div>
-
-        {/* Contenedor del botón de Google */}
-        <div
-          className="social-row"
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginTop: 8,
-            minHeight: 45,
-          }}
-        >
-          <div ref={googleBtnRef} style={{ display: "inline-block" }} />
-        </div>
-
-        <p className="muted" style={{ marginTop: 16 }}>
-          Don’t have an account?{" "}
-          <Link to="/register" className="link-inline">
-            Sign up
-          </Link>
-        </p>
       </div>
     </main>
   );
 }
-  
