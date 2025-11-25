@@ -17,6 +17,9 @@ import ScrumMembersPage from "./pages/scrumMembers.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import ScrumBacklogPage from "./pages/ScrumBacklog.jsx";
 import ScrumSprintPage from "./pages/ScrumSprint.jsx";
+import ScrumSprintBacklogPage from "./pages/ScrumSprintBacklog";
+import ScrumParkingLotPage from "./pages/ScrumParkingLot";
+import ScrumMetricsPage from "./pages/ScrumMetrics";
 import ImpedimentsBacklogPage from "./pages/ImpedimentsBacklog.jsx";
 import IncidentsBacklogPage from "./pages/IncidentsBacklog.jsx";
 
@@ -43,6 +46,9 @@ export default function App() {
         <Route path="/scrum" element={<ScrumMembersPage />} />
         <Route path="/scrum/backlog" element={<ScrumBacklogPage />} />
         <Route path="/scrum/sprint" element={<ScrumSprintPage />} />
+        <Route path="/scrum/sprint-backlog" element={<ScrumSprintBacklogPage />} />
+        <Route path="/scrum/parking-lot" element={<ScrumParkingLotPage />} />
+        <Route path="/scrum/metrics" element={<ScrumMetricsPage />} />
         <Route path="/ImpedimentsBacklog" element={<ImpedimentsBacklogPage />} />
         <Route path="/IncidentsBacklog" element={<IncidentsBacklogPage />} />
       </Route>

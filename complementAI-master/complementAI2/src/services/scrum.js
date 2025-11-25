@@ -150,3 +150,35 @@ export async function updateSprintItem(sprintId, id, payload) {
   });
   return handleJsonResponse(res, "No se pudo actualizar el ítem");
 }
+
+
+// Parking Lot
+export async function getParkingLot(projectId) {
+  const res = await api.get(`/projects/${projectId}/parking-lot`);
+  return res.data;
+}
+
+export async function createParkingItem(projectId, payload) {
+  const res = await api.post(`/projects/${projectId}/parking-lot`, payload);
+  return res.data;
+}
+
+export async function deleteParkingItem(id) {
+  await api.delete(`/parking-lot/${id}`);
+}
+
+
+// Métricas de sprint
+export async function getSprintMetrics(sprintId) {
+  const res = await api.get(`/sprints/${sprintId}/metrics`);
+  return res.data;
+}
+
+export async function createSprintMetric(sprintId, payload) {
+  const res = await api.post(`/sprints/${sprintId}/metrics`, payload);
+  return res.data;
+}
+
+export async function deleteSprintMetric(id) {
+  await api.delete(`/metrics/${id}`);
+}
