@@ -1002,7 +1002,6 @@ select:focus {
 
 /* haz que el hero ocupe todo el ancho con su gradiente */
 .hero {
-  background: linear-gradient(180deg, #6a11cb 0%, #9c27b0 50%, #7b1fa2 100%);
   padding: clamp(32px, 7vw, 96px) clamp(20px, 4vw, 60px);
   min-height: calc(
     100dvh - 64px
