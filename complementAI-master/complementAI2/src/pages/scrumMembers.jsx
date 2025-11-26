@@ -18,10 +18,12 @@ export default function ScrumMembersPage() {
   const query = useQuery();
   const navigate = useNavigate();
 
-  // Intenta leer ?projectId=xxx desde la URL
+  // Intenta leer ?projectId=xxx y ?name=YYY desde la URL
   const initialProjectId = Number(query.get("projectId")) || 0;
+  const initialProjectName = query.get("name") || "";
 
   const [projectId, setProjectId] = useState(initialProjectId || 0);
+  const [projectName] = useState(initialProjectName); // 👈 NUEVO: nombre del proyecto
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
@@ -54,7 +56,7 @@ export default function ScrumMembersPage() {
       // actualiza la URL: /scrum?projectId=ID
       const params = new URLSearchParams(window.location.search);
       params.set("projectId", String(id));
-      if (projectName) params.set("name", projectName); //preservamos el nombre si existe
+      if (projectName) params.set("name", projectName); // preservamos el nombre si existe
       navigate(`/scrum?${params.toString()}`, { replace: true });
     } catch (err) {
       console.error("Error cargando miembros:", err);

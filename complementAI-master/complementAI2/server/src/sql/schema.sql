@@ -53,16 +53,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON public.users (email);
 CREATE INDEX IF NOT EXISTS users_provider_idx ON public.users (provider, provider_id);
 
 
+
 -- ======================
 -- MÓDULO SCRUM
 -- ======================
 
 -- 1) Miembros del proyecto con rol Scrum
-CREATE TABLE IF NOT EXISTS project_members (
+CREATE TABLE IF NOT EXISTS public.project_members (
   id BIGSERIAL PRIMARY KEY,
-  project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  project_id BIGINT NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   role TEXT NOT NULL CHECK (role IN ('product_owner', 'scrum_master', 'developer')),
+  status TEXT NOT NULL DEFAULT 'active', -- 👈 aquí metemos la columna nueva
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(project_id, user_id)
 );

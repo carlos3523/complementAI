@@ -11,6 +11,14 @@ import { query, pool } from "./sql/db.js";
 import scrumRoutes from "./routes/scrum.js";
 
 const app = express();
+// ❌ Desactivar ETag para evitar respuestas 304 sin body
+app.disable("etag");
+
+// ❌ Evitar cache del navegador en la API
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
 /* =========================
    Middlewares base

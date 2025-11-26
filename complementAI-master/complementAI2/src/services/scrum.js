@@ -22,163 +22,169 @@ export function addProjectMember(projectId, userId, role) {
 
 // DELETE /api/scrum/projects/:id/members/:memberId
 export function removeProjectMember(projectId, memberId) {
-  return api.del(`${BASE}/projects/${projectId}/members/${memberId}`);
+  return api.delete(`${BASE}/projects/${projectId}/members/${memberId}`);
 }
 
 /* =========================================================
- *  HELPERS genéricos para fetch con JSON
- * =======================================================*/
-
-async function handleJsonResponse(res, defaultErrorMsg) {
-  // Si el servidor devolvió HTML u otro content-type, evitamos el "Unexpected token <"
-  const contentType = res.headers.get("content-type") || "";
-  if (!contentType.includes("application/json")) {
-    if (!res.ok) {
-      throw new Error(defaultErrorMsg);
-    }
-    // Si por alguna razón es 2xx pero no json, devolvemos null
-    return null;
-  }
-
-  const data = await res.json().catch(() => {
-    throw new Error(defaultErrorMsg);
-  });
-
-  if (!res.ok) {
-    throw new Error(data.error || defaultErrorMsg);
-  }
-
-  return data;
-}
-
-/* =========================================================
- *  PRODUCT BACKLOG
- *  Tabla: product_backlog (se asume columnas:
- *  id, project_id, title, type, priority, story_points,
- *  description, status, created_at, ...
+ *  PRODUCT BACKLOG  (Axios)
  * =======================================================*/
 
 // GET /api/scrum/projects/:projectId/backlog
 export async function getProductBacklog(projectId) {
-  const res = await fetch(`${BASE}/projects/${projectId}/backlog`, {
-    credentials: "include",
-  });
-  return handleJsonResponse(res, "No se pudo obtener el backlog");
+  const res = await api.get(`${BASE}/projects/${projectId}/backlog`);
+  const data = res.data;
+  // Acepta tanto [ ... ] como { rows: [ ... ] }
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.rows)) return data.rows;
+  return [];
 }
 
 // POST /api/scrum/projects/:projectId/backlog
 export async function createBacklogItem(projectId, payload) {
-  const res = await fetch(`${BASE}/projects/${projectId}/backlog`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  return handleJsonResponse(res, "No se pudo crear el ítem de backlog");
+  const res = await api.post(`${BASE}/projects/${projectId}/backlog`, payload);
+  return res.data;
 }
 
 // PATCH /api/scrum/backlog/:itemId
 export async function updateBacklogItem(itemId, payload) {
-  const res = await fetch(`${BASE}/backlog/${itemId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  return handleJsonResponse(res, "No se pudo actualizar el ítem de backlog");
+  const res = await api.patch(`${BASE}/backlog/${itemId}`, payload);
+  return res.data;
 }
 
 // DELETE /api/scrum/backlog/:itemId
 export async function deleteBacklogItem(itemId) {
-  const res = await fetch(`${BASE}/backlog/${itemId}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-
-  if (res.status === 204) return;
-  return handleJsonResponse(res, "No se pudo eliminar el ítem de backlog");
+  await api.delete(`${BASE}/backlog/${itemId}`);
 }
 
 /* =========================================================
- *  SPRINTS
+ *  SPRINTS  (Axios)
  * =======================================================*/
 
 export async function getSprints(projectId) {
-  const res = await fetch(`${BASE}/projects/${projectId}/sprints`, {
-    credentials: "include",
-  });
-  return handleJsonResponse(res, "No se pudieron cargar los sprints");
+  const res = await api.get(`${BASE}/projects/${projectId}/sprints`);
+  const data = res.data;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.rows)) return data.rows;
+  return [];
 }
 
 export async function createSprint(projectId, payload) {
-  const res = await fetch(`${BASE}/projects/${projectId}/sprints`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  return handleJsonResponse(res, "No se pudo crear el sprint");
+  const res = await api.post(`${BASE}/projects/${projectId}/sprints`, payload);
+  return res.data;
 }
 
 /* =========================================================
- *  SPRINT BACKLOG
+ *  SPRINT BACKLOG  (Axios)
  * =======================================================*/
 
 export async function getSprintBacklog(sprintId) {
-  const res = await fetch(`${BASE}/sprints/${sprintId}/backlog`, {
-    credentials: "include",
-  });
-  return handleJsonResponse(res, "No se pudo cargar el sprint backlog");
+  const res = await api.get(`${BASE}/sprints/${sprintId}/backlog`);
+  const data = res.data;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.rows)) return data.rows;
+  return [];
 }
 
 export async function addItemToSprint(sprintId, payload) {
-  const res = await fetch(`${BASE}/sprints/${sprintId}/backlog`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  return handleJsonResponse(res, "No se pudo añadir al sprint");
+  const res = await api.post(`${BASE}/sprints/${sprintId}/backlog`, payload);
+  return res.data;
 }
 
 export async function updateSprintItem(sprintId, id, payload) {
-  const res = await fetch(`${BASE}/sprints/${sprintId}/backlog/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  return handleJsonResponse(res, "No se pudo actualizar el ítem");
+  const res = await api.patch(
+    `${BASE}/sprints/${sprintId}/backlog/${id}`,
+    payload
+  );
+  return res.data;
 }
 
+/* =========================================================
+ *  PARKING LOT
+ * =======================================================*/
 
-// Parking Lot
 export async function getParkingLot(projectId) {
-  const res = await api.get(`/projects/${projectId}/parking-lot`);
+  const res = await api.get(`${BASE}/projects/${projectId}/parking-lot`);
   return res.data;
 }
 
 export async function createParkingItem(projectId, payload) {
-  const res = await api.post(`/projects/${projectId}/parking-lot`, payload);
+  const res = await api.post(
+    `${BASE}/projects/${projectId}/parking-lot`,
+    payload
+  );
   return res.data;
 }
 
 export async function deleteParkingItem(id) {
-  await api.delete(`/parking-lot/${id}`);
+  await api.delete(`${BASE}/parking-lot/${id}`);
 }
 
+/* =========================================================
+ *  MÉTRICAS (Burndown / Velocity)
+ * =======================================================*/
 
-// Métricas de sprint
 export async function getSprintMetrics(sprintId) {
-  const res = await api.get(`/sprints/${sprintId}/metrics`);
+  const res = await api.get(`${BASE}/sprints/${sprintId}/metrics`);
   return res.data;
 }
 
 export async function createSprintMetric(sprintId, payload) {
-  const res = await api.post(`/sprints/${sprintId}/metrics`, payload);
+  const res = await api.post(`${BASE}/sprints/${sprintId}/metrics`, payload);
   return res.data;
 }
 
 export async function deleteSprintMetric(id) {
-  await api.delete(`/metrics/${id}`);
+  await api.delete(`${BASE}/metrics/${id}`);
+}
+
+/* =========================================================
+ *  IMPEDIMENTOS
+ * =======================================================*/
+
+export async function getImpediments(projectId) {
+  const res = await api.get(`${BASE}/projects/${projectId}/impediments`);
+  return res.data;
+}
+
+export async function createImpediment(projectId, payload) {
+  const res = await api.post(
+    `${BASE}/projects/${projectId}/impediments`,
+    payload
+  );
+  return res.data;
+}
+
+export async function updateImpediment(id, payload) {
+  const res = await api.patch(`${BASE}/impediments/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteImpediment(id) {
+  await api.delete(`${BASE}/impediments/${id}`);
+}
+
+/* =========================================================
+ *  INCIDENTES
+ * =======================================================*/
+
+export async function getIncidents(projectId) {
+  const res = await api.get(`${BASE}/projects/${projectId}/incidents`);
+  return res.data;
+}
+
+export async function createIncident(projectId, payload) {
+  const res = await api.post(
+    `${BASE}/projects/${projectId}/incidents`,
+    payload
+  );
+  return res.data;
+}
+
+export async function updateIncident(id, payload) {
+  const res = await api.patch(`${BASE}/incidents/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteIncident(id) {
+  await api.delete(`${BASE}/incidents/${id}`);
 }

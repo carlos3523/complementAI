@@ -1,5 +1,5 @@
-// src/pages/ScrumSprints.jsx
-import { useEffect, useState, useMemo } from "react";
+// src/pages/ScrumSprint.jsx
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -26,6 +26,10 @@ export default function ScrumSprintsPage() {
 
   const [projectId, setProjectId] = useState(initialProjectId);
   const [sprints, setSprints] = useState([]);
+  const [productBacklog, setProductBacklog] = useState([]);
+  const [sprintBacklog, setSprintBacklog] = useState([]);
+  const [selectedSprintId, setSelectedSprintId] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
@@ -34,12 +38,20 @@ export default function ScrumSprintsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const [selectedSprintId, setSelectedSprintId] = useState(null);
-  const [productBacklog, setProductBacklog] = useState([]);
-  const [sprintBacklog, setSprintBacklog] = useState([]);
-
   const hasProject = !!projectId;
 
+  // Arrays “seguros”
+  const safeSprints = Array.isArray(sprints) ? sprints.filter(Boolean) : [];
+  const safeProductBacklog = Array.isArray(productBacklog)
+    ? productBacklog.filter(Boolean)
+    : [];
+  const safeSprintBacklog = Array.isArray(sprintBacklog)
+    ? sprintBacklog.filter(Boolean)
+    : [];
+
+  // -------------------------------------------------------
+  // AUTO-LOAD ON MOUNT
+  // -------------------------------------------------------
   useEffect(() => {
     if (initialProjectId) {
       loadSprints(initialProjectId);
@@ -48,21 +60,27 @@ export default function ScrumSprintsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // -------------------------------------------------------
+  // LOADERS (SIN .rows NI NADA RARO)
+  // -------------------------------------------------------
   async function loadSprints(pid = projectId) {
     const id = Number(pid);
     if (!id) {
       setErrMsg("Debes indicar un ID de proyecto válido");
       return;
     }
+
     setErrMsg("");
     setLoading(true);
     try {
       const data = await getSprints(id);
-      setSprints(data);
+      const arr = Array.isArray(data) ? data.filter(Boolean) : [];
+      setSprints(arr);
       setProjectId(String(id));
     } catch (err) {
       console.error("Error cargando sprints:", err);
       setErrMsg(err.message || "No se pudieron cargar los sprints");
+      setSprints([]);
     } finally {
       setLoading(false);
     }
@@ -71,24 +89,32 @@ export default function ScrumSprintsPage() {
   async function loadProductBacklog(pid = projectId) {
     const id = Number(pid);
     if (!id) return;
+
     try {
       const data = await getProductBacklog(id);
-      setProductBacklog(data);
+      const arr = Array.isArray(data) ? data.filter(Boolean) : [];
+      setProductBacklog(arr);
     } catch (err) {
       console.error("Error cargando product backlog:", err);
+      setProductBacklog([]);
     }
   }
 
   async function loadSprintBacklog(sprintId) {
     try {
       const data = await getSprintBacklog(sprintId);
-      setSprintBacklog(data);
+      const arr = Array.isArray(data) ? data.filter(Boolean) : [];
+      setSprintBacklog(arr);
     } catch (err) {
       console.error("Error cargando sprint backlog:", err);
       setErrMsg(err.message || "No se pudo cargar el sprint backlog");
+      setSprintBacklog([]);
     }
   }
 
+  // -------------------------------------------------------
+  // ACTIONS
+  // -------------------------------------------------------
   async function handleCreateSprint() {
     const id = Number(projectId);
     if (!id) {
@@ -109,7 +135,8 @@ export default function ScrumSprintsPage() {
         start_date: startDate || null,
         end_date: endDate || null,
       });
-      setSprints((prev) => [sprint, ...prev]);
+
+      setSprints((prev) => [sprint, ...(prev || [])]);
       setNewSprintName("");
       setNewSprintGoal("");
       setStartDate("");
@@ -132,11 +159,9 @@ export default function ScrumSprintsPage() {
       alert("Primero selecciona un sprint");
       return;
     }
+
     try {
-      const created = await addItemToSprint(selectedSprintId, {
-        pb_item_id: pbItemId,
-      });
-      // recargar backlog del sprint
+      await addItemToSprint(selectedSprintId, { pb_item_id: pbItemId });
       await loadSprintBacklog(selectedSprintId);
     } catch (err) {
       console.error("Error añadiendo ítem al sprint:", err);
@@ -154,9 +179,12 @@ export default function ScrumSprintsPage() {
     }
   }
 
+  // -------------------------------------------------------
+  // RENDER
+  // -------------------------------------------------------
   return (
     <main className="assistant-screen" data-theme="ink">
-      {/* Appbar */}
+      {/* APP BAR */}
       <div className="asst-appbar">
         <div className="asst-appbar-left" style={{ display: "flex", gap: 12 }}>
           <button
@@ -194,8 +222,9 @@ export default function ScrumSprintsPage() {
         </div>
       </div>
 
+      {/* GRID */}
       <div className="asst-wrap" style={{ gridTemplateColumns: "1fr 1fr" }}>
-        {/* Columna izquierda: proyecto + sprints */}
+        {/* LEFT COLUMN */}
         <section className="asst-card">
           <h2>Proyecto</h2>
           <p style={{ opacity: 0.8, fontSize: 14 }}>
@@ -215,19 +244,18 @@ export default function ScrumSprintsPage() {
                 />
               </label>
             </div>
-            <div style={{ alignSelf: "flex-end" }}>
-              <button
-                className="btn-primary"
-                type="button"
-                onClick={() => {
-                  loadSprints(projectId);
-                  loadProductBacklog(projectId);
-                }}
-                disabled={loading}
-              >
-                Cargar sprints
-              </button>
-            </div>
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => {
+                loadSprints(projectId);
+                loadProductBacklog(projectId);
+              }}
+              disabled={loading}
+              style={{ alignSelf: "flex-end" }}
+            >
+              Cargar sprints
+            </button>
           </div>
 
           {projectName && (
@@ -292,14 +320,14 @@ export default function ScrumSprintsPage() {
 
           <h3>Sprints del proyecto</h3>
           {loading && <p style={{ opacity: 0.8 }}>Cargando…</p>}
-          {!loading && !sprints.length && (
+          {!loading && safeSprints.length === 0 && (
             <p style={{ opacity: 0.8 }}>No hay sprints aún.</p>
           )}
 
           <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
-            {sprints.map((s) => (
+            {safeSprints.map((s, idx) => (
               <li
-                key={s.id}
+                key={s.id ?? `sprint-${idx}`}
                 style={{
                   padding: "8px 10px",
                   borderRadius: 8,
@@ -325,7 +353,7 @@ export default function ScrumSprintsPage() {
           </ul>
         </section>
 
-        {/* Columna derecha: Sprint backlog + Product backlog */}
+        {/* RIGHT COLUMN */}
         <section className="asst-card">
           {errMsg && (
             <div
@@ -342,6 +370,7 @@ export default function ScrumSprintsPage() {
           )}
 
           <h2>Sprint backlog</h2>
+
           {!selectedSprintId && (
             <p style={{ opacity: 0.8 }}>
               Selecciona un sprint para ver y gestionar su backlog.
@@ -350,13 +379,13 @@ export default function ScrumSprintsPage() {
 
           {selectedSprintId && (
             <>
-              {!sprintBacklog.length && (
+              {safeSprintBacklog.length === 0 && (
                 <p style={{ opacity: 0.8, marginTop: 8 }}>
                   Este sprint aún no tiene ítems.
                 </p>
               )}
 
-              {!!sprintBacklog.length && (
+              {safeSprintBacklog.length > 0 && (
                 <table
                   style={{
                     width: "100%",
@@ -374,8 +403,8 @@ export default function ScrumSprintsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sprintBacklog.map((item) => (
-                      <tr key={item.id}>
+                    {safeSprintBacklog.map((item, idx) => (
+                      <tr key={item.id ?? `sb-${idx}`}>
                         <td style={{ padding: "4px" }}>{item.title}</td>
                         <td style={{ padding: "4px" }}>{item.type}</td>
                         <td style={{ padding: "4px" }}>
@@ -404,15 +433,17 @@ export default function ScrumSprintsPage() {
               <hr style={{ margin: "16px 0", borderColor: "#333" }} />
 
               <h3>Product backlog (añadir al sprint)</h3>
-              {!productBacklog.length && (
+
+              {safeProductBacklog.length === 0 && (
                 <p style={{ opacity: 0.8 }}>
                   No hay ítems en el product backlog de este proyecto.
                 </p>
               )}
+
               <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
-                {productBacklog.map((pb) => (
+                {safeProductBacklog.map((pb, idx) => (
                   <li
-                    key={pb.id}
+                    key={pb.id ?? `pb-${idx}`}
                     style={{
                       padding: "6px 8px",
                       borderRadius: 8,
