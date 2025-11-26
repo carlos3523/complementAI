@@ -1,13 +1,42 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext"; // 👈 importar el contexto
+import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
-import "../style.css";
+import "./home.css"; 
+
+// --- Componente Header Limpio ---
+const Header = ({ token, navigate }) => (
+    <header className="tech-header">
+      <div className="header-left">
+        <h2 className="logo" onClick={() => navigate("/")}>
+          complementAI
+        </h2>
+        <nav className="tech-nav">
+          <a href="/about-us">Nosotros</a>
+          {token && <a onClick={() => navigate("/Assistant")}>Asistente</a>}
+          <button className="theme-toggle">Tema Oscuro/Claro</button>
+        </nav>
+      </div>
+
+      <div className="header-right">
+        <button className="btn-premium">Premium</button>
+        <button className="btn-signup" onClick={() => navigate("/register")}>
+          Sign up
+        </button>
+        <button className="btn-login" onClick={() => navigate("/login")}>
+          Login
+        </button>
+      </div>
+    </header>
+);
+// --- Fin Componente Header ---
+
 
 export default function Home() {
   const navigate = useNavigate();
-  const { token } = useAuth(); // sabremos si el usuario está logueado
+  const { token } = useAuth();
 
+  // Se mantiene la lógica de imágenes por si se utiliza para efectos visuales
   const images = useMemo(
     () => [
       "https://images.unsplash.com/photo-1529336953121-a0ce23b1fd1e?auto=format&fit=crop&w=1600&q=80",
@@ -25,78 +54,44 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="split">
-        <section className="hero">
-          <div className="side-rail">
-            <div className="side-dot" />
-            <div className="side-star">✦</div>
+      <Header token={token} navigate={navigate} />
+
+      {/* Uso de Grid para el Hero Section para una distribución limpia */}
+      <section className="hero-grid-container">
+        <div className="hero-content">
+          <h1 className="hero-title">
+            La IA que <span>Documenta</span> y <span>Justifica</span> tus Proyectos
+          </h1>
+          <p className="hero-p">
+            Una herramienta especializada en la gestión de proyectos,
+            generación de documentación y aplicación de metodologías. Te
+            sugiere plantillas y **justifica por qué usarlas**.
+          </p>
+
+          <div className="cta-row">
+            <button
+              className="btn-primary"
+              onClick={() =>
+                token ? navigate("/wizard") : navigate("/login")
+              }
+            >
+              Crear Proyecto
+            </button>
+            
+            {/* CTA secundario sin lógica de token aquí para simplificar el flujo */}
+            <button
+              className="btn-secondary"
+              onClick={() => navigate("/Assistant")}
+            >
+              Ir al Asistente
+            </button>
           </div>
+        </div>
 
-          <div className="hero-content">
-            <h1 className="hero-title">Implement-AI</h1>
-            <p className="hero-p">
-              Una herramienta con IA para <strong>gestionar proyectos</strong>,
-              especializada en documentación y metodologías. Te sugiere
-              plantillas y justifica por qué usarlas.
-            </p>
-
-            <div className="cta-row">
-              <button
-                className="btn-primary"
-                onClick={() =>
-                  token ? navigate("/wizard") : navigate("/login")
-                }
-              >
-                Crear Proyecto
-              </button>
-
-              {/* 👇 solo mostrar Asistente si ya está logueado */}
-              {token && (
-                <button
-                  className="btn-secondary"
-                  onClick={() => navigate("/Assistant")}
-                  style={{ marginLeft: "10px" }}
-                >
-                  Ir al Asistente
-                </button>
-              )}
-
-              <a className="link" href="#features">
-                Ver cómo funciona
-              </a>
-            </div>
-
-            <div className="fake-lines">
-              <div className="fake-line w90" />
-              <div className="fake-line w80" />
-              <div className="fake-line w70" />
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* Features */}
-      <section id="features" className="features">
-        <div className="container">
-          <div className="cards">
-            <div className="card">
-              <h3>Motor de Plantillas</h3>
-              <p>
-                Lógica interna que sugiere la plantilla exacta según la etapa.
-              </p>
-            </div>
-            <div className="card">
-              <h3>Asistente IA</h3>
-              <p>
-                Explica y justifica cada documento con respaldo en buenas
-                prácticas.
-              </p>
-            </div>
-            <div className="card">
-              <h3>Trazabilidad</h3>
-              <p>Seguimiento paso a paso para equipos nuevos.</p>
-            </div>
-          </div>
+        {/* Placeholder para la Referencia Visual 3D */}
+        <div className="hero-visual">
+          <div className="cube-placeholder" />
+          <p className="beta-date">Beta Q1 2026</p>
         </div>
       </section>
     </Layout>
